@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1064,6 +1065,20 @@ func (n *Nginx) AddTcpLoadBalance(request *http.Request) core.Response {
 	listenPort := public.InterfaceToString(params["listen_port"].(interface{}))
 	maxTimeout := public.InterfaceToString(params["max_timeout"].(interface{}))
 	notTimeout := public.InterfaceToString(params["not_timeout"].(interface{}))
+
+	if protocol != "tcp" && protocol != "udp" && protocol != "tcp/udp" {
+		return core.Fail("协议类型不正确")
+	}
+	if _, err := strconv.Atoi(maxTimeout); err != nil {
+		return core.Fail("最大超时时间不正确")
+	}
+	if _, err := strconv.Atoi(notTimeout); err != nil {
+		return core.Fail("非超时时间不正确")
+	}
+	if listenAddress != "127.0.0.1" && listenAddress != "0.0.0.0" {
+		return core.Fail("监听地址不正确")
+	}
+
 	ps := public.InterfaceToString(params["ps"].(interface{}))
 	tmpNodeInfo := params["node_info"].([]interface{})
 	nodeInfos := make([]types.LoadNodeInfo, len(tmpNodeInfo))
@@ -1074,6 +1089,18 @@ func (n *Nginx) AddTcpLoadBalance(request *http.Request) core.Response {
 			}
 			if !public.IsIpAddr(m["node_address"].(string)) {
 				return core.Fail("目标主机地址不正确")
+			}
+			if _, err := strconv.Atoi(m["node_weight"].(string)); err != nil {
+				return core.Fail("权重不正确")
+			}
+			if _, err := strconv.Atoi(m["node_max_fails"].(string)); err != nil {
+				return core.Fail("最大失败次数不正确")
+			}
+			if _, err := strconv.Atoi(m["node_fail_timeout"].(string)); err != nil {
+				return core.Fail("失败超时时间不正确")
+			}
+			if _, err := strconv.Atoi(m["node_status"].(string)); err != nil {
+				return core.Fail("node_status 不正确")
 			}
 			nodeInfo := types.LoadNodeInfo{
 				NodeAddress:       m["node_address"].(string),
