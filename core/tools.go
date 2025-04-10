@@ -244,7 +244,11 @@ func GetParamsFromRequestToStruct(request *http.Request, obj any) error {
 }
 
 func GetClientIpFromRequest(request *http.Request) (clientIp string) {
-	return request.RemoteAddr
+	client, _, err := net.SplitHostPort(strings.TrimSpace(request.RemoteAddr))
+	if err != nil {
+		return "127.0.0.1"
+	}
+	return client
 }
 
 func GetClientPortFromRequest(request *http.Request) (clientPort int) {
