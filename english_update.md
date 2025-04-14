@@ -1,3 +1,23 @@
+## **2025-04-14 V5.6 **
+[Remove] Remove SQL injection regular matching rules
+[Optimization] SQL injection detection fully adopts semantic analysis detection method, with accuracy increased to 99.10% and false positives reduced to 0.89%
+PS: Upgrades will not automatically remove regular matching rules
+<br/>
+
+## **2025-04-08 V5.5 **
+
+【 Open Source 】 The code has been opened source https://github.com/aaPanel/aaWAF
+[Fix] Fix bug in automatic renewal
+[Fix] Fix bugs in IP groups
+[Fix] Fixed a bug in port forwarding that affects Nginx stability
+<br/>
+
+
+## **2025-03-18 V5.4 **
+【 Add 】 3D map added to homepage<br/>
+[Fix] Fix the issue of adding failed due to multiple SSL ports<br/>
+
+
 ## **2025-02-24 V5.3 **
 [Add] Batch renewal of SSl certificates<br/>
 [Add] Add SSL certificate automatic renewal upon expiration (certificates less than 20 days will be automatically triggered)<br/>
