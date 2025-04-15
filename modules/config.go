@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"CloudWaf/providers"
 
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -134,6 +135,83 @@ func (config *Config) SetCert(request *http.Request) core.Response {
 	return core.Success("证书设置成功")
 }
 
+// 重新生成证书
+func (config *Config) NewGenerateCertificate(request *http.Request) core.Response {
+	serverIp, localIp := core.GetServerIp()
+	pfxFile := core.AbsPath("./ssl/baota_root.pfx")
+	pfxPwdFile := core.AbsPath("./ssl/root_password.pl")
+	data := map[string]any{
+		"action":     "get_domain_cert",
+		"company":    "宝塔面板",
+		"panel":      1,
+		"uid":        0,
+		"access_key": strings.Repeat("B", 32),
+		"domain":     serverIp + "," + localIp,
+	}
+	client := public.GetHttpClient(60)
+	bs, err := json.Marshal(data)
+	if err != nil {
+		return core.Fail(err)
+	}
+	dataValues, err := url.ParseQuery("data=" + string(bs))
+	if err != nil {
+		return core.Fail(err)
+	}
+	resp, err := client.PostForm("https://api.bt.cn/bt_cert", dataValues)
+	if err != nil {
+		return core.Fail(err)
+	}
+	defer resp.Body.Close()
+	resultBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return core.Fail(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return core.Fail("在线申请自签证书失败")
+	}
+	m := struct {
+		Status   bool   `json:"status"`
+		Cert     string `json:"cert"`
+		Key      string `json:"key"`
+		Pfx      string `json:"pfx"`
+		Password string `json:"password"`
+		Msg      string `json:"msg"`
+	}{}
+	if err = json.Unmarshal(resultBytes, &m); err != nil {
+		return core.Fail(err)
+	}
+	if !m.Status {
+		return core.Fail("在线申请自签证书失败：" + m.Msg)
+	}
+
+	if err := os.WriteFile(config.cert_path, []byte(m.Cert), fs.ModePerm); err != nil {
+		return core.Fail(err)
+	}
+
+	if err := os.WriteFile(config.key_path, []byte(m.Key), fs.ModePerm); err != nil {
+		return core.Fail(err)
+	}
+
+	pfxBs, err := base64.StdEncoding.DecodeString(m.Pfx)
+
+	if err != nil {
+		return core.Fail(err)
+	}
+
+	if err := os.WriteFile(pfxFile, pfxBs, fs.ModePerm); err != nil {
+		return core.Fail(err)
+	}
+
+	if err := os.WriteFile(pfxPwdFile, []byte(m.Password), fs.ModePerm); err != nil {
+		return core.Fail(err)
+	}
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		_, err = public.ExecCommandCombined("bash", "-c", "cat /www/cloud_waf/console/data/.pid |xargs kill -9;nohup /www/cloud_waf/console/CloudWaf >> /www/cloud_waf/console/logs/error.log 2>&1 &")
+	}()
+
+	return core.Success("重新生成成功")
+}
 func (config *Config) GetCert(request *http.Request) core.Response {
 	cert_pem, err := public.ReadFile(config.cert_path)
 	if err != nil {
