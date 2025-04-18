@@ -1034,7 +1034,7 @@ func (sp *Speed) def_whiteData() []types.SpeedRule {
 }
 
 func (sp *Speed) def_forceData() []types.SpeedRule {
-	ext := []string{"gif", "jpg", "jpeg", "png", "bmp", "sw", "js", "css"}
+	ext := []string{"gif", "jpg", "jpeg", "png", "bmp", "sw", "js", "css", "ico", "webp", "avif"}
 
 	timestamp := time.Now().Unix()
 	force := make([]types.SpeedRule, 0)
