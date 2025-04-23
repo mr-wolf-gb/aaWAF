@@ -4,6 +4,14 @@
 2.使用Golang 进行开发 性能方面需要考虑</br>
 3.如果考虑性能要求需要改成C/C++/Rust的方式</br>
 
+参考:
+========================
+
+https://github.com/php/php-src/blob/master/Zend/zend_language_scanner.l
+
+https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
+
+
 
 > 基于php-parser 二次开发 [php-parser](https://github.com/VKCOM/php-parser/)
 
