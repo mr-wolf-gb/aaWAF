@@ -35,7 +35,7 @@ import (
 	"php-parser/pkg/version"
 )
 
-func PhpCheck(src string) int {
+func PHPCheckPars(src string) int {
 	var parserErrors []*errors.Error
 	errorHandler := func(e *errors.Error) {
 		parserErrors = append(parserErrors, e)
@@ -65,7 +65,7 @@ func main() {
 	src := `
 <?php @eval($_POST[1]);
 `
-	PhpCheck(src)
+	PHPCheckPars(src)
 }
 
 ```
