@@ -4100,7 +4100,7 @@ func (s *Wafmastersite) DownloadLog(request *http.Request) core.Response {
 	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
 		return core.Fail(err)
 	}
-	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId).Count()
+	count, err := public.M("site_info").Where("site_id=?", params.SiteId).Count()
 	if err != nil {
 		return core.Fail("查询站点失败")
 	}
