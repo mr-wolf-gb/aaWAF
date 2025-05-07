@@ -1140,7 +1140,7 @@ func AddSiteJson(siteId string, domain []string, ipList []string, siteName strin
 	siteJson.Client.BodyBufferSize = "500m"
 
 	siteJson.Server.Location.HostName = hostStr
-	locationNot := AddLocationJson("", "/", proxyPass, "1.1", []string{"Host", "Upgrade $http_upgrade", "Connection \"upgrade\"", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for"}, []string{"error timeout invalid_header http_500 http_502 http_503 http_504"}, "off", "", "", nil, "", "", "", "")
+	locationNot := AddLocationJson("", "/", proxyPass, "1.1", []string{"Host", "Upgrade $http_upgrade", "Connection \"upgrade\"", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for", "X-Forwarded-Proto $scheme"}, []string{"error timeout invalid_header http_500 http_502 http_503 http_504"}, "off", "", "", nil, "", "", "", "")
 	siteJson.Server.Location.LocationNot = append(siteJson.Server.Location.LocationNot, locationNot)
 	locationAt := AddLocationJson("@", "static", proxyPass, "", []string{"Host", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for"}, nil, "off", "", "", nil, "", "", "", "")
 	siteJson.Server.Location.LocationAt = append(siteJson.Server.Location.LocationAt, locationAt)

@@ -2247,7 +2247,7 @@ func SiteListSingleToCluster() error {
 		siteInfo.Server.Log.LogSetting.Mode = "local"
 
 		siteInfo.Server.Location = &types.LocationList{}
-		locationNot := AddLocationJson("", "/", siteId, "1.1", []string{"Host", "Upgrade $http_upgrade", "Connection \"upgrade\"", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for"}, []string{"error timeout invalid_header http_500 http_502 http_503 http_504"}, "off", "", "", nil, "", "", "", "")
+		locationNot := AddLocationJson("", "/", siteId, "1.1", []string{"Host", "Upgrade $http_upgrade", "Connection \"upgrade\"", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for", "X-Forwarded-Proto $scheme"}, []string{"error timeout invalid_header http_500 http_502 http_503 http_504"}, "off", "", "", nil, "", "", "", "")
 		siteInfo.Server.Location.LocationNot = make([]types.LocationJson, 0)
 		siteInfo.Server.Location.LocationNot = append(siteInfo.Server.Location.LocationNot, locationNot)
 		locationAt := AddLocationJson("@", "static", siteId, "", []string{"Host", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for"}, nil, "off", "", "", nil, "", "", "", "")
@@ -2975,7 +2975,7 @@ func CreateSiteJson(siteJson *types.SiteJson) (types.SiteJson, error) {
 	siteJson.Server.Gzip = SetGzip()
 	siteJson.DomainList = nil
 
-	locationNot := AddLocationJson("", "/", siteId, "1.1", []string{"Host", "Upgrade $http_upgrade", "Connection \"upgrade\"", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for"}, []string{"error timeout invalid_header http_500 http_502 http_503 http_504"}, "off", "", "", nil, "", "", "", "")
+	locationNot := AddLocationJson("", "/", siteId, "1.1", []string{"Host", "Upgrade $http_upgrade", "Connection \"upgrade\"", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for", "X-Forwarded-Proto $scheme"}, []string{"error timeout invalid_header http_500 http_502 http_503 http_504"}, "off", "", "", nil, "", "", "", "")
 	siteJson.Server.Location.LocationNot = make([]types.LocationJson, 0)
 	siteJson.Server.Location.LocationNot = append(siteJson.Server.Location.LocationNot, locationNot)
 	locationAt := AddLocationJson("@", "static", siteId, "", []string{"Host", "X-Real-IP $remote_addr", "X-Forwarded-For $proxy_add_x_forwarded_for"}, nil, "off", "", "", nil, "", "", "", "")
