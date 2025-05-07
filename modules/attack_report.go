@@ -827,7 +827,7 @@ func (r *Report) GetRuleHitList(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	path := "/www/cloud_waf/nginx/conf.d/waf/data/btwaf_rule_hit.json"
-	data, err := public.Tail(path, 2001)
+	data, err := public.Tail(path, 20001)
 	if err != nil || len(data) < 5 {
 		return core.Success(map[string]interface{}{
 			"list":  []map[string]interface{}{},

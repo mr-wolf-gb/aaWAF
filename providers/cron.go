@@ -39,10 +39,37 @@ func init() {
 	registerProviderAlways(cr.addWafRuleRestore)
 	registerProvider(cr.UpdateRealtimeHistory)
 	registerProviderAlways(cr.addSyncRenewalCert)
-
+	registerProviderAlways(cr.btwafRuleHitClear)
 }
 
 type cronProvider struct{}
+
+func (cr *cronProvider) btwafRuleHitClear() {
+	public.RemoveTaskByTag("btwafRuleHitClear")
+	if !public.CheckTaskByTag("btwafRuleHitClear") {
+
+		public.AddTaskInterval("btwafRuleHitClear", 60*time.Second, btwafRuleHitClear, 120*time.Second)
+	}
+}
+
+// 文件大于5M就清空
+func btwafRuleHitClear() {
+	path := "/www/cloud_waf/nginx/conf.d/waf/data/btwaf_rule_hit.json"
+	if _, err := os.Stat(path); err == nil {
+		fileInfo, err := os.Stat(path)
+		if err != nil {
+			return
+		}
+		if fileInfo.Size() > 5*1024*1024 {
+			data, err := public.Tail(path, 1000)
+			if err != nil {
+				public.WriteFile(path, "")
+			}
+			public.WriteFile(path, data)
+			logging.Error("命中记录文件大于5M,内容保留最后1000条")
+		}
+	}
+}
 
 func (cr *cronProvider) addSyncRenewalCert() {
 	public.RemoveTaskByTag("SyncRenewalCert")
