@@ -1717,6 +1717,23 @@ func (o *Overview) clusterMapHelp(params map[string]interface{}) map[string]inte
 
 }
 
+func GetCount() float64 {
+	var err error
+	var res interface{}
+	res, err = public.MySqlWithClose(func(conn *db.MySql) (interface{}, error) {
+		query := conn.NewQuery()
+		query.Table("area_total").
+			Where("server_name =?", []interface{}{"127.0.0.251"}).
+			Field([]string{"ifnull(SUM(request), 0) as `total`"})
+		result, err := query.Select()
+		return result, err
+	})
+	if err != nil {
+		return 0
+	}
+	return res.([]map[string]interface{})[0]["total"].(float64)
+}
+
 func (o *Overview) realTime() (map[string]interface{}, error) {
 	var request_total float64
 	var proxy_time float64
@@ -1753,6 +1770,11 @@ func (o *Overview) realTime() (map[string]interface{}, error) {
 			}
 
 		}
+	}
+
+	local_request_total := GetCount()
+	if local_request_total > 0 {
+		request_total += local_request_total
 	}
 
 	nginx := map[string]interface{}{
