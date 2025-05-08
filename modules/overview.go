@@ -1997,6 +1997,10 @@ func (o *Overview) slowRequest(sites string) []map[string]interface{} {
 			if len(parts) < 7 {
 				continue
 			}
+			server_host := ""
+			if len(parts) >= 7 {
+				server_host = parts[7]
+			}
 			uri := parts[5]
 			times := parts[6]
 			date := parts[1] + " " + parts[2]
@@ -2008,7 +2012,7 @@ func (o *Overview) slowRequest(sites string) []map[string]interface{} {
 			entry["server_name"] = parts[3]
 			entry["host"] = parts[0]
 			entry["sites_id"] = sites
-
+			entry["server_host"] = server_host
 			result = append(result, entry)
 		}
 		sort.Slice(result, func(i, j int) bool {
