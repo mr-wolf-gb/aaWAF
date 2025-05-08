@@ -718,6 +718,25 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					},
 				},
 				{
+					"type":                 "post_param",
+					"text":                 "POST请求参数",
+					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"}, // 可用的运算符
+					"left_factor_enabled":  true,                                                        // 是否启用左运算数
+					"right_factor_enabled": true,                                                        // 是否启用右运算数
+					"left_widget": map[string]any{
+						"type":        "text",    // 组件类型
+						"value":       "",        // 可选值
+						"placeholder": "请输入参数名称", // 默认占位文本
+						"hint":        "示例：username",
+					}, // 组件1
+					"right_widget": map[string]any{
+						"type":        "text",   // 组件类型
+						"value":       "",       // 可选值
+						"placeholder": "请输入参数值", // 默认占位文本
+						"hint":        "示例：xiaoming",
+					}, // 组件2
+				},
+				{
 					"type":                 "request_header",
 					"text":                 "请求头",
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"},
