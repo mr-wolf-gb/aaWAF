@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ import (
 var (
 	registryObj      = &Registry{}
 	authorizationObj = authorization.NewAuthorization()
+	configFile       = common.AbsPath("./config/sysconfig.json")
 )
 
 type RecoveryGoroutine struct {
@@ -316,7 +318,23 @@ func SetSessionWithKey(sessionKey string, key string, value any) error {
 	if err := MapToStruct(m, session); err != nil {
 		return err
 	}
-	return cache.Set(cache.SessionPrefix+sessionKey, session, 86400)
+
+	ttl := int64(86400)
+	context, err := os.ReadFile(configFile)
+	if err == nil {
+		data := make(map[string]interface{})
+		err = json.Unmarshal(context, &data)
+		if err == nil {
+			if timeout, ok := data["session_timeout"].(float64); ok {
+				ttl = int64(timeout) * 60
+				if ttl < 86400 {
+					ttl = 86400
+				}
+			}
+		}
+	}
+
+	return cache.Set(cache.SessionPrefix+sessionKey, session, ttl)
 }
 
 func SetSession(request *http.Request, key string, value any) error {
