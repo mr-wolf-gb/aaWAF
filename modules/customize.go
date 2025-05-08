@@ -737,6 +737,20 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					}, // 组件2
 				},
 				{
+					"type":                 "body_param",
+					"text":                 "Post Body内容匹配",
+					"operators":            []string{"regexp", "eq", "neq", "prefix", "suffix", "like", "in", "not_in"}, // 可用的运算符
+					"left_factor_enabled":  false,                                                                       // 是否启用左运算数
+					"right_factor_enabled": true,                                                                        // 是否启用右运算数
+					"left_widget":          make(map[string]any),
+					"right_widget": map[string]any{
+						"type":        "text",      // 组件类型
+						"value":       "",          // 可选值
+						"placeholder": "输入需要匹配的内容", // 默认占位文本
+						"hint":        "示例：username=ddd&aaa=ccc",
+					}, // 组件
+				},
+				{
 					"type":                 "request_header",
 					"text":                 "请求头",
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"},
