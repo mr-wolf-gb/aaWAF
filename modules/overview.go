@@ -2020,7 +2020,7 @@ func (o *Overview) slowRequest(sites string) []map[string]interface{} {
 				continue
 			}
 			server_host := ""
-			if len(parts) >= 7 {
+			if len(parts) > 7 {
 				server_host = parts[7]
 			}
 			uri := parts[5]
