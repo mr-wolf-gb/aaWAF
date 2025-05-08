@@ -8,16 +8,20 @@ import (
 	"CloudWaf/public"
 	"CloudWaf/public/db"
 	"CloudWaf/public/validate"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"html"
+	"io"
+	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"CloudWaf/providers"
 
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -100,13 +104,69 @@ func (config *Config) GetConfig(request *http.Request) core.Response {
 	}
 	s := time.Now().String()
 	systemTime := s[:19] + " " + s[30:39]
+	apiinfo, err := public.GetWAFApi()
 	return core.Success(map[string]interface{}{
 		"config":        data,
 		"port":          core.GetServerPort(),
 		"two_step_auth": status,
 		"basic_auth":    basicAuth,
 		"systemdate":    systemTime,
+		"apiinfo":       apiinfo,
 	})
+}
+
+// 开启API
+func (config *Config) SetOpenApi(request *http.Request) core.Response {
+	params := struct {
+		Type      int    `json:"type"`
+		LimitAddr string `json:"limit_addr"`
+	}{}
+	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
+		return core.Fail(err)
+	}
+	// t_type 类型 1 重置Token
+	// t_type 类型 2  开启或者关闭API
+	// t_type 类型 3  设置地址
+	//limit_addr  限制地址
+	t_type := params.Type
+	limit_addr := params.LimitAddr
+	if params.Type == 3 {
+		// 判断
+		apiinfo, _ := public.GetWAFApi()
+		limit_addr_arr := strings.Split(limit_addr, "\n")
+		apiinfo.LimitAddr = limit_addr_arr
+		public.SaveWAFApi(apiinfo)
+		return core.Success("设置成功")
+	}
+	if t_type == 2 {
+		apiinfo, _ := public.GetWAFApi()
+		if apiinfo.Open == false && apiinfo.Token == "" {
+			apiinfo.Token = public.RandomStr(32)
+			apiinfo.Open = true
+			public.SaveWAFApi(apiinfo)
+			return core.Success("设置成功")
+		}
+		if apiinfo.Open == true {
+			apiinfo.Open = false
+			apiinfo.Token = ""
+			public.SaveWAFApi(apiinfo)
+			return core.Success("设置成功")
+		} else {
+			apiinfo.Open = true
+			apiinfo.Token = public.RandomStr(32)
+			public.SaveWAFApi(apiinfo)
+			return core.Success("设置成功")
+		}
+	}
+	if t_type == 1 {
+		apiinfo, _ := public.GetWAFApi()
+		apiinfo.Token = public.RandomStr(32)
+		public.SaveWAFApi(apiinfo)
+		return core.Success("设置成功")
+	}
+
+	return core.Success("设置成功")
+
 }
 
 func (config *Config) SetCert(request *http.Request) core.Response {

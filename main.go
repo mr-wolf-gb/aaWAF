@@ -39,9 +39,6 @@ var staticFs embed.FS
 func registerMiddlewares(srv *core.Server) {
 	srv.Before(func(w http.ResponseWriter, r *http.Request) bool {
 		// API暂时不开放,等前端对接后开放
-		if true {
-			return true
-		}
 
 		if len(r.URL.Path) < 5 || !strings.EqualFold(r.URL.Path[:5], "/api/") {
 			return true

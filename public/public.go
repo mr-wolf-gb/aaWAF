@@ -2758,3 +2758,9 @@ func (api *ApiInfo) CheckWafApiAccess(clientIP string) bool {
 	}
 	return false
 }
+
+func SaveWAFApi(ApiInfo ApiInfo) {
+	apiinfoJson, _ := json.Marshal(ApiInfo)
+	WriteFile("/www/cloud_waf/console/data/btwaf_api.json", string(apiinfoJson))
+
+}
