@@ -1,3 +1,33 @@
+## **2025-05-09 V5.7 正式版本**
+
+【开源】开源PHP语义分析引擎 https://github.com/aaPanel/aaWAF/tree/main/php_engine<br/>
+【新增】新增全局API 使用教程:https://github.com/aaPanel/aaWAF/blob/main/API.md<br/>
+【新增】自定义拦截 增加POST请求参数拦截、body 内容拦截 <br/>
+【新增】证书重新生成 PS:（服务器对外IP不变的情况下生成的证书是一样的）<br/>
+【优化】规则命中记录 由2000条日志修改为2W条<br/>
+【优化】规则命中记录 内容替换 增加URL显示<br/>
+【优化】今日请求数量增加默认站点访问的次数<br/>
+【优化】慢请求URL修改成完整的URL <br/>
+【优化】网站加速增加ico、webp、avif 类型缓存（新增的网站才有）<br/>
+【优化】网站配置文件默认新增X-Forwarded-Proto头<br/>
+【修复】修复流量限制规则和描述不符<br/>
+【修复】修复IP拉黑记录不解封问题<br/>
+【修复】修复超时时间不一致的问题<br/>
+【修复】修复IP组不显示的情况<br/>
+【修复】修复无法下载网站日志的问题<br/>
+
+致谢以下用户:
+@Illustar0<br/>
+@defeatedperson<br/>
+@361611074<br/>
+@meng-luo<br/>
+@simplove<br/>
+@LiuNianJiang<br/>
+@wenjiamian<br/>
+@mianidc<br/>
+@yuchao-su<br/>
+<br/>
+
 ## **2025-04-14 V5.6 正式版本**
 
 【移除】移除SQL注入正则匹配规则<br/>
