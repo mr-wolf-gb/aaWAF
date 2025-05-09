@@ -895,6 +895,9 @@ func (r *Report) GetRuleHitList(request *http.Request) core.Response {
 		})
 	}
 	sort.Slice(file_data, func(i, j int) bool {
+		if file_data[i] == nil || file_data[j] == nil {
+			return false
+		}
 		return file_data[i]["timestimp"].(int64) > file_data[j]["timestimp"].(int64)
 	})
 	data2 := public.PaginateData(file_data, params.P, params.PSize)
