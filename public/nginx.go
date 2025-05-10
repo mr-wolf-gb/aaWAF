@@ -457,7 +457,13 @@ func ReadSslInfo(certFile string, keyFile string, sslInfo SslInfo) SslInfo {
 	}
 	sslInfo.Brand = x509Cert.Issuer.CommonName
 	sslInfo.NotAfter = x509Cert.NotAfter
-	sslInfo.Domains = x509Cert.DNSNames
+	if len(x509Cert.DNSNames) == 0 {
+		for _, v := range x509Cert.IPAddresses {
+			sslInfo.Domains = append(sslInfo.Domains, v.String())
+		}
+	} else {
+		sslInfo.Domains = x509Cert.DNSNames
+	}
 	return sslInfo
 }
 
@@ -514,7 +520,13 @@ func GetAllSslInfo() []SslInfo {
 		sslInfo.Privkey = privateStr
 		sslInfo.Brand = x509Cert.Issuer.CommonName
 		sslInfo.NotAfter = x509Cert.NotAfter
-		sslInfo.Domains = x509Cert.DNSNames
+		if len(x509Cert.DNSNames) == 0 {
+			for _, v := range x509Cert.IPAddresses {
+				sslInfo.Domains = append(sslInfo.Domains, v.String())
+			}
+		} else {
+			sslInfo.Domains = x509Cert.DNSNames
+		}
 		sslInfos = append(sslInfos, sslInfo)
 	}
 	return sslInfos
