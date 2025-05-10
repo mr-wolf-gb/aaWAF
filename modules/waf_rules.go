@@ -1882,7 +1882,7 @@ type UserLimit struct {
 }
 
 func (w *Wafrules) AddUserLimit(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"name", "site", "types", "url", "condition", "region", "action"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"name", "site", "types", "url", "condition", "region", "action", "return"}, "参数错误")
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -1931,6 +1931,9 @@ func (w *Wafrules) AddUserLimit(request *http.Request) core.Response {
 		userLimit.Return = "html"
 	}
 
+	if userLimit.Action == "content" {
+		userLimit.Return = public.InterfaceToString(params["return"].(interface{}))
+	}
 	if userLimit.Return == "" {
 		return core.Fail("返回内容不能为空")
 	}
@@ -2059,7 +2062,7 @@ func (w *Wafrules) AddUserLimit(request *http.Request) core.Response {
 }
 
 func (w *Wafrules) EditUserLimit(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"id", "name", "site", "types", "url", "condition", "region", "action"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"id", "name", "site", "types", "url", "condition", "region", "action", "return"}, "参数错误")
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -2133,7 +2136,9 @@ func (w *Wafrules) EditUserLimit(request *http.Request) core.Response {
 	if userLimit.Action == "status_503" || userLimit.Action == "status_502" || userLimit.Action == "status_403" || userLimit.Action == "status_404" || userLimit.Action == "drop" {
 		userLimit.Return = "html"
 	}
-
+	if userLimit.Action == "content" {
+		userLimit.Return = public.InterfaceToString(params["return"].(interface{}))
+	}
 	if userLimit.Return == "" {
 		return core.Fail("返回内容不能为空")
 	}
