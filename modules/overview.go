@@ -1722,8 +1722,10 @@ func GetCount() float64 {
 	var res interface{}
 	res, err = public.MySqlWithClose(func(conn *db.MySql) (interface{}, error) {
 		query := conn.NewQuery()
+		now := time.Now()
+		date := now.Format("2006-01-02")
 		query.Table("ip_total").
-			Where("server_name =? and ip != ?", []interface{}{"127.0.0.251", "127.0.0.1"}).
+			Where("date=? and server_name =? and ip != ?", []interface{}{date, "127.0.0.251", "127.0.0.1"}).
 			Field([]string{"ifnull(SUM(request), 0) as `total`"})
 		result, err := query.Select()
 		return result, err
