@@ -41,7 +41,8 @@ class WafApi:
         token = self.__get_md5(time_now + self.__get_md5(self.__WAF_KEY))
         return {
             'waf_request_time': time_now,
-            'waf_request_token': token
+            'waf_request_token': token,
+            "Content-Type":"application/json"
         }
 
     def get_logs(self):
@@ -67,6 +68,7 @@ class WafApi:
                     print("接口返回失败:", json_data.get('msg', '未知错误'))
             else:
                 print(f"请求失败，状态码：{response.status_code}")
+                print("请检查当前IP是否 在API访问白名单内")
 
         except requests.RequestException as e:
             print(f"网络请求异常: {e}")
