@@ -60,13 +60,13 @@ func btwafRuleHitClear() {
 		if err != nil {
 			return
 		}
-		if fileInfo.Size() > 5*1024*1024 {
-			data, err := public.Tail(path, 1000)
+		if fileInfo.Size() > 10*1024*1024 {
+			data, err := public.Tail(path, 10000)
 			if err != nil {
 				public.WriteFile(path, "")
 			}
 			public.WriteFile(path, data)
-			logging.Error("命中记录文件大于5M,内容保留最后1000条")
+			logging.Error("命中记录文件大于10M,内容保留最后10000条")
 		}
 	}
 }
@@ -245,12 +245,10 @@ func (cr *cronProvider) CheckHitLog() {
 		return
 	}
 
-	data, err := public.Tail(path, 2000)
+	data, err := public.Tail(path, 20001)
 	if err != nil {
-
 		return
 	}
-
 	public.WriteFile(path, data)
 
 }
