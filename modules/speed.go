@@ -792,6 +792,7 @@ func (sp *Speed) ClusterGetList(request *http.Request) core.Response {
 			site_info = speData[v.SiteId].(map[string]interface{})
 			site_info["hit"] = sp.get_site_hit(site_info["site_id"].(string))
 			site_info["addtime"] = v.CreateTime
+			site_info["site_name"] = v.SiteName
 		}
 		data = append(data, site_info)
 
