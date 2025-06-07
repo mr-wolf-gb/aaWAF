@@ -4154,6 +4154,13 @@ func (s *Wafmastersite) DownloadLog(request *http.Request) core.Response {
 		}
 		return response
 	}
+	if params.Delete == 1 {
+		//删除文件
+		err = os.Remove(file_name)
+		if err != nil {
+			return core.Fail(err)
+		}
+	}
 
 	return core.Success("操作成功")
 }
