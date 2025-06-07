@@ -133,10 +133,11 @@ func (r *Report) AttackReportLog(request *http.Request) core.Response {
 		if flag {
 			query.Where("time >= ?", []interface{}{start}).Where("time <= ?", []interface{}{end})
 		}
-		query.Field([]string{"id", "time", "ip", "ip_city ", "ip_country", "ip_province", "uri", "action", "server_name", "risk_type", "method", "request_uri", "host", "http_log_path", "user_agent"}).Order("time", "desc")
+		query.Field([]string{"id", "time", "ip", "ip_city ", "ip_country", "ip_province", "uri", "action", "server_name", "risk_type", "filter_rule", "method", "request_uri", "host", "http_log_path", "user_agent"}).Order("time", "desc")
 		if v, ok := params["keyword"]; ok {
 			if c, ok := v.(string); ok && c != "" {
-				query.Where("server_name like ? or uri like ? or ip like ? or ip_country like ? or  ip_city like ? or request_uri like ? or host like ?", []interface{}{
+				query.Where("server_name like ? or uri like ? or ip like ? or ip_country like ? or  ip_city like ? or request_uri like ? or host like ? or filter_rule like ?", []interface{}{
+					fmt.Sprintf("%%%s%%", c),
 					fmt.Sprintf("%%%s%%", c),
 					fmt.Sprintf("%%%s%%", c),
 					fmt.Sprintf("%%%s%%", c),
