@@ -3087,3 +3087,221 @@ func (o *Overview) GetHelpConfig(request *http.Request) core.Response {
 	return core.Success(result)
 
 }
+
+// 获取大屏QPS 请求数 拦截数 拦截率
+func (o *Overview) WafLargeScreenQps(request *http.Request) core.Response {
+	result := make(map[string]interface{}, 0)
+	result["total"] = 0
+	result["malicious_total"] = 0
+	result["qps"] = 0
+	result["waf_large_screen_text"] = "宝塔云WAF大屏"
+
+	resultStus := struct {
+		Status bool `json:"status"`
+		Msg    struct {
+			Qps   uint64 `json:"qps"`
+			Today struct {
+				Req uint64 `json:"req"`
+			} `json:"today"`
+		} `json:"msg"`
+	}{}
+	if res, err := public.HttpPostByToken(public.URL_HTTP_REQUEST+"/get_global_status", 15); err == nil {
+		_ = json.Unmarshal([]byte(res), &resultStus)
+	}
+	result["qps"] = resultStus.Msg.Qps
+	result["total"] = resultStus.Msg.Today.Req
+
+	start_time := time.Now().Format("2006-01-02")
+	start_time = start_time + " 00:00:00"
+	start_timeStamp, err := public.ParseDateStr("2006-01-02 15:04:05", start_time)
+	if err == nil {
+		end_timeStamp := start_timeStamp + 86399
+		query := public.M("totla_log").Field([]string{"id", "time"})
+		query.Where("time >? and time <?", []any{start_timeStamp, end_timeStamp})
+		count, err := query.Count()
+		if err == nil {
+			result["malicious_total"] = int(count)
+		}
+	}
+	path := "/www/cloud_waf/console/config/waf_large_screen_text.json"
+	if public.FileExists(path) {
+		text, err := public.ReadFile(path)
+		if err == nil {
+			result["waf_large_screen_text"] = text
+		}
+	}
+	return core.Success(result)
+}
+
+// IP 拦截TOP10 拦截规则TOP10 拦截IP所属国家TOP10
+func (o *Overview) WafLargeScreenMap(request *http.Request) core.Response {
+	result := make(map[string]interface{}, 0)
+	var top []map[string]interface{}
+	var type_list []map[string]interface{}
+	var ip_country []map[string]interface{}
+	_, err := public.MySqlWithClose(func(conn *db.MySql) (interface{}, error) {
+		query := conn.NewQuery()
+		query.Table("ip_intercept").
+			Where("date = ?", []interface{}{time.Now().Format("2006-01-02")}).
+			WhereNotIn("ip", []interface{}{"127.0.0.1"}).
+			Field([]string{
+				"any_value(ip) as ip",
+				"any_value(country) as country",
+				"any_value(city) as city",
+				"any_value(province) as province",
+				"request  as visits"}).
+			Sort("visits", "desc").
+			Limit([]int64{0, 10})
+		result, err := query.Select()
+		result = o.aggregateData(result)
+
+		for i := 0; i < len(result); i++ {
+			if i >= 10 {
+				break
+			}
+			tmp_top := make(map[string]interface{})
+			tmp_address := ""
+			if address, ok := result[i]["country"].(string); ok {
+				tmp_address = address
+				if address == "中国" {
+					if province, ok := result[i]["province"].(string); ok {
+						if len(province) > 0 {
+							tmp_address = province
+						} else {
+							tmp_address = "中国"
+						}
+						if city, ok := result[i]["city"].(string); ok {
+							if len(city) > 0 {
+								tmp_address = tmp_address + "-" + city
+							}
+						}
+					}
+				}
+				tmp_top["address"] = tmp_address
+			}
+			tmp_top["ip"] = result[i]["ip"]
+			tmp_top["count"] = result[i]["visits"]
+			top = append(top, tmp_top)
+		}
+		return result, err
+	})
+	if err == nil && len(top) > 0 {
+		result["attack_details"] = top
+	} else {
+
+		result["attack_details"] = []map[string]interface{}{}
+	}
+	start_time := time.Now().Format("2006-01-02")
+	start_time = start_time + " 00:00:00"
+	start_timeStamp, _ := public.ParseDateStr("2006-01-02 15:04:05", start_time)
+	end_timeStamp := start_timeStamp + 86399
+	_, err = public.MySqlWithClose(func(conn *db.MySql) (interface{}, error) {
+		query := conn.NewQuery()
+		query.Table("totla_log").
+			Where("time > ? and time < ?", []interface{}{start_timeStamp, end_timeStamp}).
+			Field([]string{
+				"filter_rule",
+				"COUNT(*) as count"}).
+			Group("filter_rule").
+			Sort("count", "DESC")
+		result, err := query.Select()
+		for i := 0; i < len(result); i++ {
+			tmp := make(map[string]interface{})
+			tmp["name"] = result[i]["filter_rule"]
+			tmp["value"] = result[i]["count"]
+			type_list = append(type_list, tmp)
+		}
+		return result, err
+	})
+
+	if err == nil && len(type_list) > 0 {
+		result["list"] = type_list
+	} else {
+		result["list"] = []map[string]interface{}{}
+	}
+
+	_, err = public.MySqlWithClose(func(conn *db.MySql) (interface{}, error) {
+		query := conn.NewQuery()
+		query.Table("totla_log").
+			Where("time > ? and time < ?", []interface{}{start_timeStamp, end_timeStamp}).
+			Field([]string{
+				"ip_country",
+				"COUNT(*) as count",
+				"COUNT(DISTINCT ip) as unique_ip_count",
+			}).
+			Group("ip_country").
+			Sort("count", "DESC").Limit([]int64{0, 10})
+		result, err := query.Select()
+		for i := 0; i < len(result); i++ {
+			tmp := make(map[string]interface{})
+			tmp["country"] = result[i]["ip_country"]
+			tmp["attack_count"] = result[i]["count"]
+			tmp["ip_count"] = result[i]["unique_ip_count"]
+			ip_country = append(ip_country, tmp)
+		}
+		return result, err
+	})
+
+	data := map[string]interface{}{}
+	publicIpInfo, err := public.Rconfigfile(o.ip_path)
+	if err == nil && publicIpInfo != nil && publicIpInfo["ip_longitude"] != "" && publicIpInfo["ip_latitude"] != "" {
+		// data = publicIpInfo
+
+		if publicIpInfo["ip_latitude"] == "" {
+			publicIpInfo["ip_latitude"] = "23.048884"
+		}
+		if publicIpInfo["ip_longitude"] == "" {
+			publicIpInfo["ip_longitude"] = "113.42205"
+		}
+		data = map[string]interface{}{
+
+			"ip_address": publicIpInfo["ip_address"],
+			"longitude":  publicIpInfo["ip_longitude"],
+			"latitude":   publicIpInfo["ip_latitude"],
+			"country":    "",
+		}
+	} else {
+		serverIp, _ := core.GetServerIp()
+		// 经纬度
+		ipInfo := public.GetIPAreaIpInfo(serverIp)
+		if ipInfo.Latitude == "" {
+			ipInfo.Latitude = "23.048884"
+		}
+		if ipInfo.Longitude == "" {
+			ipInfo.Longitude = "113.42205"
+		}
+		data = map[string]interface{}{
+			"ip_address": serverIp,
+			"longitude":  ipInfo.Longitude,
+			"latitude":   ipInfo.Latitude,
+			"country":    ipInfo.Country,
+		}
+	}
+	if len(ip_country) == 0 {
+		ip_country = []map[string]interface{}{}
+	}
+	result["map"] = map[string]interface{}{
+		"list":   ip_country,
+		"server": data,
+	}
+
+	return core.Success(result)
+
+}
+
+func (o *Overview) UpdateLargeScreenText(request *http.Request) core.Response {
+	params, err := core.GetParamsFromRequest(request)
+	if err != nil {
+		return core.Fail(err)
+	}
+	if params["text"] == nil {
+		return core.Fail("缺少参数")
+	}
+	text := params["text"].(string)
+	path := "/www/cloud_waf/console/config/waf_large_screen_text.json"
+	ok, err := public.WriteFile(path, text)
+	if ok {
+		return core.Success("修改成功")
+	}
+	return core.Fail("修改失败")
+}

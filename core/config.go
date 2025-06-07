@@ -38,6 +38,11 @@ var (
 	}
 )
 
+type ServerIP struct {
+	ServerIp string `json:"server_ip"`
+	LocalIp  string `json:"local_ip"`
+}
+
 func init() {
 	parseAuthIgnore()
 }
@@ -70,6 +75,23 @@ func GetServerIp() (serverIp, localIp string) {
 	if cache.Has(cacheKey) {
 		cachedData := cache.Get(cacheKey).([]string)
 		return cachedData[0], cachedData[1]
+	}
+	// 读取配置文件
+	configFile := common.AbsPath("./config/serverip.json")
+	obj, err := os.Stat(configFile)
+	// 判断这个配置文件是否超过2天
+	if err == nil && obj.ModTime().Add(2*24*time.Hour).Before(time.Now()) {
+		err = os.Remove(configFile)
+	}
+	var ServerIP ServerIP
+	if err == nil {
+		bs, err := os.ReadFile(configFile)
+		if err == nil {
+			err = json.Unmarshal(bs, &ServerIP)
+			if err == nil {
+				return ServerIP.ServerIp, ServerIP.LocalIp
+			}
+		}
 	}
 	response, err := (&http.Client{
 		Timeout: 60 * time.Second,
@@ -107,6 +129,12 @@ func GetServerIp() (serverIp, localIp string) {
 	}
 	if localIp == "" {
 		localIp = "127.0.0.1"
+	}
+	ServerIP.ServerIp = serverIp
+	ServerIP.LocalIp = localIp
+	bs, err := json.Marshal(ServerIP)
+	if err == nil {
+		_ = os.WriteFile(configFile, bs, 0644)
 	}
 	return serverIp, localIp
 }
