@@ -17,6 +17,10 @@ waf_request_token = md5(string(request_time) + md5(api_sk))<br/>
 3、为了安全考虑，请务必添加 IP 白名单 (不添加IP白名单则会被拒绝访问、如果没固定IP 则填写*号代表允许所有IP) <br/>
 4、所有响应内容统一为 Json 数据格式 <br/>
 
+#时间问题?
+如果服务器时间和当前时间相差超过 2分钟，则会被拒绝访问。<br/>
+请确保服务器时间和当前时间一致。<br/>
+
 
 # Python 示例
 ```python
