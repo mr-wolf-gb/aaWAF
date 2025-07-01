@@ -1169,7 +1169,7 @@ func CheckTwoAuth(passcode string) bool {
 			return false
 		}
 	}
-	return true
+	return false
 }
 
 func GetTwoAuth() bool {
