@@ -1087,7 +1087,7 @@ func (n *Nginx) AddTcpLoadBalance(request *http.Request) core.Response {
 			if !validate.IsPort(m["node_port"].(string)) {
 				return core.Fail("目标端口不正确")
 			}
-			if !public.IsIpAddr(m["node_address"].(string)) {
+			if !validate.IsHost(m["node_address"].(string)) {
 				return core.Fail("目标主机地址不正确")
 			}
 			if _, err := strconv.Atoi(m["node_weight"].(string)); err != nil {
