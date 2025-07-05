@@ -27,6 +27,7 @@ var (
 func init() {
 
 	cr := &cronProvider{}
+	registerProviderAlways(cr.AddSyslog)
 	registerProviderAlways(cr.addSliceSiteLog)
 	registerProviderAlways(cr.addDebugClearLog)
 	registerProviderAlways(cr.addCheckNginx)
@@ -43,6 +44,13 @@ func init() {
 }
 
 type cronProvider struct{}
+
+func (cr *cronProvider) AddSyslog() {
+	public.RemoveTaskByTag("AddSyslog")
+	if !public.CheckTaskByTag("AddSyslog") {
+		public.AddTaskInterval("AddSyslog", 120*time.Second, public.AddSyslog, 120*time.Second)
+	}
+}
 
 func (cr *cronProvider) btwafRuleHitClear() {
 	public.RemoveTaskByTag("btwafRuleHitClear")

@@ -105,6 +105,8 @@ func (config *Config) GetConfig(request *http.Request) core.Response {
 	s := time.Now().String()
 	systemTime := s[:19] + " " + s[30:39]
 	apiinfo, err := public.GetWAFApi()
+	syslogConfig, _ := public.ReadSyslogConfig()
+
 	return core.Success(map[string]interface{}{
 		"config":        data,
 		"port":          core.GetServerPort(),
@@ -112,6 +114,7 @@ func (config *Config) GetConfig(request *http.Request) core.Response {
 		"basic_auth":    basicAuth,
 		"systemdate":    systemTime,
 		"apiinfo":       apiinfo,
+		"syslog":        syslogConfig,
 	})
 }
 
@@ -1126,4 +1129,32 @@ func (config *Config) SetLanguage(request *http.Request) core.Response {
 	}
 
 	return core.Success("操作成功")
+}
+
+func (config *Config) SetSyslog(request *http.Request) core.Response {
+	params := struct {
+		Open bool   `json:"open"` // 是否开启Syslog
+		Host string `json:"host"` // Syslog服务器地址
+		Port int    `json:"port"` // Syslog服务器端口
+	}{}
+
+	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
+		return core.Fail(err)
+	}
+
+	if params.Host == "" {
+		return core.Fail("Syslog服务器地址不能为空")
+	}
+	if !validate.IsHost(params.Host) {
+		return core.Fail("Syslog服务器地址格式不合法")
+	}
+	if params.Port < 1 || params.Port > 65535 {
+		return core.Fail("Syslog服务器端口范围为1-65535")
+	}
+	err := public.SetSysLog(params.Open, params.Host, params.Port)
+	if err != nil {
+		return core.Fail(err)
+	}
+	return core.Success("操作成功")
+
 }
