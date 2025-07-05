@@ -794,6 +794,7 @@ func (limit *Limit) ipList(path, filename string) core.Response {
 			if len(values) > 2 && values[2] != "" {
 				s += "|" + values[2].(string)
 			}
+
 			lines = append(lines, s)
 		}
 	}
