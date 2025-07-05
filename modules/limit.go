@@ -437,6 +437,13 @@ func (limit *Limit) handleIPList(content interface{}, path string) core.Response
 	count := 0
 	for _, v := range content.([]interface{}) {
 		v = strings.TrimSpace(public.InterfaceToString(v))
+		Remark := ""
+		// v[0] 代表第一个IP v[1] 代表备注
+		if strings.Contains(public.InterfaceToString(v), "|") {
+			parts := strings.Split(public.InterfaceToString(v), "|")
+			v = parts[0]
+			Remark = strings.TrimSpace(parts[1])
+		}
 		if len(public.InterfaceToString(v)) > 0 {
 			parts := strings.Split(public.InterfaceToString(v), "/")
 			if len(parts) > 1 && public.IsIpv6(parts[0]) {
@@ -456,16 +463,16 @@ func (limit *Limit) handleIPList(content interface{}, path string) core.Response
 				ipIndex := public.RandomStr(20)
 				if public.IsIpv6(public.InterfaceToString(v)) {
 					data := make([]interface{}, 0)
-					data = append(data, public.InterfaceToString(v), "", "", createTime, open, count, "v6", ipIndex)
+					data = append(data, public.InterfaceToString(v), "", Remark, createTime, open, count, "v6", ipIndex)
 					fileData = append(fileData, data)
 				}
 				if len(parts) > 1 && public.IsIpv6(parts[0]) {
 					data := make([]interface{}, 0)
-					data = append(data, parts[0]+"/"+parts[1], "", "", createTime, open, count, "v6", ipIndex)
+					data = append(data, parts[0]+"/"+parts[1], "", Remark, createTime, open, count, "v6", ipIndex)
 					fileData = append(fileData, data)
 				}
 				if public.IsIpv4(public.InterfaceToString(v)) {
-					data, err := limit.address(public.InterfaceToString(v), public.InterfaceToString(v), "", createTime, open, count, "v4", ipIndex)
+					data, err := limit.address(public.InterfaceToString(v), public.InterfaceToString(v), Remark, createTime, open, count, "v4", ipIndex)
 					if err != nil {
 						return core.Fail(err)
 					}
@@ -486,7 +493,7 @@ func (limit *Limit) handleIPList(content interface{}, path string) core.Response
 					ipStart := public.IpToLong(ipNet[0])
 					ipEnd := ipStart | ((1 << (33 - l)) - 1)
 					ipEnds := public.LongToIp(ipEnd)
-					data, err := limit.address(ipaddr, ipEnds, "", createTime, open, count, "v4", ipIndex)
+					data, err := limit.address(ipaddr, ipEnds, Remark, createTime, open, count, "v4", ipIndex)
 					if err != nil {
 						return core.Fail(err)
 					}
@@ -499,7 +506,7 @@ func (limit *Limit) handleIPList(content interface{}, path string) core.Response
 					ipRange := strings.Split(public.InterfaceToString(v), "-")
 					startIP := ipRange[0]
 					endIP := ipRange[1]
-					data, err := limit.address(startIP, endIP, "", createTime, open, count, "v4", ipIndex)
+					data, err := limit.address(startIP, endIP, Remark, createTime, open, count, "v4", ipIndex)
 					if err != nil {
 						return core.Fail(err)
 					}
@@ -749,6 +756,9 @@ func (limit *Limit) ipList(path, filename string) core.Response {
 	for _, values := range fileData {
 		if values[6].(string) == "v6" {
 			s = values[0].(string)
+			if len(values) > 2 && values[2] != "" {
+				s += "|" + values[2].(string)
+			}
 			lines = append(lines, s)
 			continue
 		}
@@ -780,6 +790,9 @@ func (limit *Limit) ipList(path, filename string) core.Response {
 			} else {
 				s = public.LongToIp(ipOne)
 				s += "-" + public.LongToIp(ipTwo)
+			}
+			if len(values) > 2 && values[2] != "" {
+				s += "|" + values[2].(string)
 			}
 			lines = append(lines, s)
 		}
