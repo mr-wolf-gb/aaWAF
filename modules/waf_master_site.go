@@ -4250,3 +4250,65 @@ func SyncRenewalCert() {
 	}
 
 }
+
+func (s *Wafmastersite) GetSiteLogsSize(request *http.Request) core.Response {
+	// 备份网站日志
+	list, err := public.GetHistorySiteLogs("/www/cloud_waf/vhost/history_backups/logs")
+	if err != nil {
+		list = make(map[string]int64)
+	}
+	//当前的网站日志
+	list2, err := public.GetHistorySiteLogs("/www/cloud_waf/nginx/logs")
+	if err != nil {
+		list2 = make(map[string]int64)
+	}
+	return core.Success(map[string]interface{}{
+		"history": list,
+		"site":    list2,
+	})
+}
+
+// 清理日志
+func (s *Wafmastersite) ClearSiteLogs(request *http.Request) core.Response {
+	//参数是一个list ["路径1", "路径2", ...]
+	params := struct {
+		Paths []string `json:"paths"`
+	}{}
+	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
+		return core.Fail(err)
+	}
+	if len(params.Paths) == 0 {
+		return core.Fail("参数错误，路径不能为空")
+	}
+	for _, path := range params.Paths {
+		if !strings.HasSuffix(path, ".log") && !strings.HasSuffix(path, ".zip") {
+			continue
+		}
+
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			continue
+		}
+		if !strings.HasPrefix(abs, "/www/cloud_waf/vhost/history_backups/logs/") && !strings.HasPrefix(abs, "/www/cloud_waf/nginx/logs/") {
+			continue
+		}
+		//如果zip文件则直接删除
+		if strings.HasSuffix(path, ".zip") {
+			if public.FileExists(abs) {
+				err = os.Remove(abs)
+				if err != nil {
+					return core.Fail("删除文件失败:" + err.Error())
+				}
+			}
+			continue
+		}
+		//如果是.log 的文件则内容直接清空
+		if public.FileExists(abs) {
+			err = os.Truncate(abs, 0)
+			if err != nil {
+				return core.Fail("网站日志清空失败:" + err.Error())
+			}
+		}
+	}
+	return core.Success("网站日志清理成功")
+}
