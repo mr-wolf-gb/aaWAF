@@ -41,65 +41,65 @@
 
 
 ## 语义分析模块列表
-- [✅] SQL注入
-- [✅] XSS跨站脚本攻击
-- [✅] 文件上传
-- [✅] SSRF服务器端请求伪造
-- [✅] 命令执行
-- [✅] 文件包含
-- [✅] PHP代码注入
-- [✅] PHP反序化漏洞
-- [✅] Java代码注入 
-- [✅] Java反序化漏洞 (如CC1、CC2、CC3)
-- [✅] 模板注入(如Flask、SSTI)
-- [✅] XML外部实体注入(XXE)
-- [❌] ASP.NET代码注入 
+- ✅ SQL注入
+- ✅ XSS跨站脚本攻击
+- ✅ 文件上传
+- ✅ SSRF服务器端请求伪造
+- ✅ 命令执行
+- ✅ 文件包含
+- ✅ PHP代码注入
+- ✅ PHP反序化漏洞
+- ✅ Java代码注入 
+- ✅ Java反序化漏洞 (如CC1、CC2、CC3)
+- ✅ 模板注入(如Flask、SSTI)
+- ✅ XML外部实体注入(XXE)
+- ❌ ASP.NET代码注入 
 
 ## 正则匹配模块列表
-- [✅] 恶意爬虫(UA)
-- [✅] 扫描器检测（UA+header头）
-- [✅] 恶意下载（备份文件）
-- [✅] Nday漏洞（如DedeCMS、PHPCMS等）
-- [✅] 弱密码防护 (如123456、password等)
+- ✅ 恶意爬虫(UA)
+- ✅ 扫描器检测（UA+header头）
+- ✅ 恶意下载（备份文件）
+- ✅ Nday漏洞（如DedeCMS、PHPCMS等）
+- ✅ 弱密码防护 (如123456、password等)
 
 ## 测试拦截的payload <a href="./Payload.md">拦截测试表 </a>
 
 ## 未来更新的模块
 - [1] Java 反序列化
-    - [❌] Fastjson 反序列化
-    - [❌] Spring 反序列化
-    - [❌] Jackson 反序列化
-    - [❌] Hibernate 反序列化
-    - [❌] JNdi 反序列化
-    - [❌] Shiro 反序列化
-    - [❌] JDBC 反序列化
-    - [❌] Expression 反序列化
-    - [❌] H2 
+    - ❌ Fastjson 反序列化
+    - ❌ Spring 反序列化
+    - ❌ Jackson 反序列化
+    - ❌ Hibernate 反序列化
+    - ❌ JNdi 反序列化
+    - ❌ Shiro 反序列化
+    - ❌ JDBC 反序列化
+    - ❌ Expression 反序列化
+    - ❌ H2 
 
 - [2] Java代码注入:
-  - [❌] OGNL表达式
-  - [❌] SpEL表达式
-  - [✅] JSP EL表达式
-  - [❌] FreeMarker(SSTI)
-  - [❌] Velocity(SSTI)
+  - ❌ OGNL表达式
+  - ❌ SpEL表达式
+  - ✅ JSP EL表达式
+  - ❌ FreeMarker(SSTI)
+  - ❌ Velocity(SSTI)
 
 - [3] 模板注入:
-    - [✅] Jinja2
-    - [❌] Twig
-    - [❌] Mustache
-    - [❌] Handlebars
-    - [❌] Smarty
+    - ✅ Jinja2
+    - ❌ Twig
+    - ❌ Mustache
+    - ❌ Handlebars
+    - ❌ Smarty
 
 - [4] Nday漏洞:
-    - [❌] 常见的PHP、Java、Python等CMS漏洞
-    - [❌] 常见的Web框架漏洞
+    - ❌ 常见的PHP、Java、Python等CMS漏洞
+    - ❌ 常见的Web框架漏洞
 
 - [5] CC攻击:
-    - [❌] 优化CC攻击检测
-    - [❌] 增加CC攻击防护规则
+    - ❌ 优化CC攻击检测
+    - ❌ 增加CC攻击防护规则
 
 - [6] 机器学习模块:
-    - [❌] 基于语义化的机器学习模型
+    - ❌ 基于语义化的机器学习模型
 
 
 ## 在线演示(Demo)
