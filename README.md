@@ -90,7 +90,9 @@
     - [❌] Handlebars
     - [❌] Smarty
 
-
+- [4] Nday漏洞:
+    - [❌] 常见的PHP、Java、Python等CMS漏洞
+    - [❌] 常见的Web框架漏洞
 
 
 ## 在线演示(Demo)
