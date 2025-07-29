@@ -62,6 +62,8 @@
 - [✅] Nday漏洞（如DedeCMS、PHPCMS等）
 - [✅] 弱密码防护 (如123456、password等)
 
+## 测试拦截的payload <a href="./Payload.md">拦截测试表 </a>
+
 ## 未来更新的模块
 - [1] Java 反序列化
     - [❌] Fastjson 反序列化
