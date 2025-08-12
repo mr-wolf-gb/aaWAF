@@ -65,6 +65,12 @@
 ## 测试拦截的payload <a href="./Payload.md">拦截测试表 </a>
 
 ## 未来更新的模块
+- [0] ASP.NET代码注入 
+    - ❌ ASP VBScript 代码注入
+    - ❌ ASP JScript 代码注入
+    - ❌ ASP.NET C# 代码注入
+    - ❌ ASP.NET VB.NET 代码注入
+
 - [1] Java 反序列化
     - ❌ Fastjson 反序列化
     - ❌ Spring 反序列化
