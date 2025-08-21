@@ -121,7 +121,7 @@ aspx
 
 ```
 
-# 多层编码 自动解码三层
+# 多层编码 自动解码三层 WAF6.8 更新了这个功能
 ```
 hex+base64+base64
 原始字符串: phpinfo();  
@@ -130,6 +130,24 @@ hex+base64+base64
 -> 4e7a41324f4463774e6a6b325a5459324e6d59794f4449354d32493d
 
 最终的payload: 4e7a41324f4463774e6a6b325a5459324e6d59794f4449354d32493d
+
+
+三层url编码
+phpinfo()%25253B%252520
+
+
+三层base64
+WTBkb2QyRlhOVzFpZVdkd1QzYzlQUT09
+
+
+
+支持的编码类型如下：
+URL编码
+hex编码
+base64编码
+Unicode编码
+
+如果还需要支持那些编码可以提交issues
 
 
 ```
