@@ -53,7 +53,7 @@
 - ✅ Java反序化漏洞 (如CC1、CC2、CC3)
 - ✅ 模板注入(如Flask、SSTI)
 - ✅ XML外部实体注入(XXE)
-- ❌ ASP.NET代码注入 
+- ✅ ASP.NET代码注入  (2025-08-21更新)
 
 ## 正则匹配模块列表
 - ✅ 恶意爬虫(UA)
@@ -66,9 +66,9 @@
 
 ## 未来更新的模块
 - [0] ASP.NET代码注入 
-    - ❌ ASP VBScript 代码注入
-    - ❌ ASP JScript 代码注入
-    - ❌ ASP.NET C# 代码注入
+    - ✅ ASP VBScript 代码注入  (2025-08-21更新)
+    - ✅ ASP JScript 代码注入   (2025-08-21更新)
+    - ✅ ASP.NET C# 代码注入    (2025-08-21更新)
     - ❌ ASP.NET VB.NET 代码注入
 
 - [1] Java 反序列化
