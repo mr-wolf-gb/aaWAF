@@ -20,8 +20,8 @@ func init() {
 		replace_path: "/www/cloud_waf/nginx/conf.d/waf/rule/replacement.json",
 
 		form_show: map[string]string{
-			"site_rules": "网站规则",
-			"uri_rules":  "网站URI规则",
+			"site_rules": core.Lan("modules.replacement.site_rules"),
+			"uri_rules":  core.Lan("modules.replacement.uri_rules"),
 		},
 	})
 
@@ -43,42 +43,42 @@ func (re *Replace) AddRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" {
-		return core.Fail("网站名称或id不能为空")
+		return core.Fail(core.Lan("modules.replacement.site.name_id.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 
-	ps := "关闭"
+	ps := core.Lan("modules.replacement.close")
 	if params.Open == true {
-		ps = "开启"
+		ps = core.Lan("modules.replacement.open")
 	}
 	exist := re.is_exist(params.SiteId)
 	if exist {
 		ok := re.openRuleStatus(params.SiteId, params.Open)
 		if ok == false {
-			public.WriteOptLog(fmt.Sprintf("网站 [%s] %s关键词替换失败", params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
-			return core.Fail("操作失败")
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.keyword.replace.fail"), params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+			return core.Fail(core.Lan("modules.replacement.op.fail"))
 		} else {
-			public.WriteOptLog(fmt.Sprintf("网站 [%s] %s关键词替换成功", params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.keyword.replace.success"), params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
 		}
 		if params.Open == false {
 			path1 := "/www/cloud_waf/nginx/conf.d/waf/data/replace_count/" + params.SiteId + "/"
 			if public.FileExists(path1) {
 				err := os.RemoveAll(path1)
 				if err != nil {
-					logging.Error("清空缓存失败：", err)
+					logging.Error(core.Lan("modules.replacement.clear_cache.fail"), err)
 				}
 			}
 			public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_replace_hit?site=%s", params.SiteId), 2)
 
 		}
 		public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 10)
-		return core.Success("操作成功")
+		return core.Success(core.Lan("modules.replacement.op.success"))
 	}
 	rules := map[string][]types.ReplaceRule{
 		"site_rules": {},
@@ -103,11 +103,11 @@ func (re *Replace) AddRules(request *http.Request) core.Response {
 		}
 		_, err = public.WriteFile(re.replace_path, buf.String())
 		if err != nil {
-			return core.Fail("写入加速配置失败")
+			return core.Fail(core.Lan("modules.replacement.write_speed_config.fail"))
 		}
-		public.WriteOptLog(fmt.Sprintf("网站 [%s] %s关键词替换成功", params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.keyword.replace.success"), params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
 		public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 10)
-		return core.Success("开启成功")
+		return core.Success(core.Lan("modules.replacement.open.success"))
 	}
 	file_data := make(map[string]types.Replace)
 	err = json.Unmarshal([]byte(json_data), &file_data)
@@ -124,11 +124,11 @@ func (re *Replace) AddRules(request *http.Request) core.Response {
 	}
 	_, err = public.WriteFile(re.replace_path, buf.String())
 	if err != nil {
-		return core.Fail("写入加速配置失败")
+		return core.Fail(core.Lan("modules.replacement.write_speed_config.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("网站[%s]开启 关键词替换", params.SiteName), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.log.enable_keyword_replace"), params.SiteName), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 10)
-	return core.Success("新增成功")
+	return core.Success(core.Lan("modules.replacement.add.success"))
 }
 
 func (re *Replace) GetRules(request *http.Request) core.Response {
@@ -141,14 +141,14 @@ func (re *Replace) GetRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" {
-		return core.Fail("网站名称或id不能为空")
+		return core.Fail(core.Lan("modules.replacement.site.name_id.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 
 	file_data, _ := re.getSpeedData()
@@ -196,18 +196,18 @@ func (re *Replace) AddRulesInfo(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteId == "" || params.MatchType == "" || params.ReValue == "" || params.Keyward == "" {
-		return core.Fail("数据不能为空")
+		return core.Fail(core.Lan("modules.replacement.data.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 
 	if params.MatchType != "site_rules" && params.MatchType != "uri_rules" {
-		return core.Fail("form参数错误")
+		return core.Fail(core.Lan("modules.replacement.form.param.error"))
 	}
 	new_rule := types.ReplaceRule{
 		MatchType:  params.MatchType,
@@ -227,8 +227,8 @@ func (re *Replace) AddRulesInfo(request *http.Request) core.Response {
 	if rule_data == nil {
 		is_ok := re.addRulesCof(&file_data, params.SiteName, params.SiteId, false, new_rule)
 		if is_ok == false {
-			public.WriteOptLog(fmt.Sprintf("网站[%s] 添加替换规则失败", params.SiteName), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
-			return core.Fail("添加失败")
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.log.add_rule_fail"), params.SiteName), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+			return core.Fail(core.Lan("modules.replacement.add.fail"))
 		}
 
 	} else {
@@ -243,14 +243,14 @@ func (re *Replace) AddRulesInfo(request *http.Request) core.Response {
 		}
 		_, err = public.WriteFile(re.replace_path, buf.String())
 		if err != nil {
-			return core.Fail("写入失败")
+			return core.Fail(core.Lan("modules.replacement.write.fail"))
 		}
 	}
 
-	ps := re.form_show[params.MatchType] + " " + params.MatchValue + " 将 [" + params.Keyward + "] 替换为 [" + params.ReValue + "]"
-	public.WriteOptLog(fmt.Sprintf("网站[%s] 添加替换规则:  %s", params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+	ps := re.form_show[params.MatchType] + " " + params.MatchValue + " " + core.Lan("will be replaced by") + " [" + params.Keyward + "] " + core.Lan("with") + " [" + params.ReValue + "]"
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.log.add_rule"), params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 10)
-	return core.Success("添加成功")
+	return core.Success(core.Lan("modules.replacement.add.success"))
 }
 
 func (re *Replace) UpdateRules(request *http.Request) core.Response {
@@ -269,22 +269,22 @@ func (re *Replace) UpdateRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteId == "" || params.Key == "" || params.MatchType == "" || params.ReValue == "" || params.Keyward == "" {
-		return core.Fail("数据不能为空")
+		return core.Fail(core.Lan("modules.replacement.data.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 
 	if params.MatchType != "site_rules" && params.MatchType != "uri_rules" {
-		return core.Fail("form参数错误")
+		return core.Fail(core.Lan("modules.replacement.form.param.error"))
 	}
 	file_data, _ := re.getSpeedDatastruct()
 	if file_data == nil {
-		return core.Fail("无数据")
+		return core.Fail(core.Lan("modules.replacement.no_data"))
 	}
 
 	rule_data := file_data[params.SiteId].Rules[params.MatchType]
@@ -302,7 +302,7 @@ func (re *Replace) UpdateRules(request *http.Request) core.Response {
 		}
 	}
 	if !flag {
-		return core.Fail("没有该数据")
+		return core.Fail(core.Lan("modules.replacement.no_such_data"))
 	}
 	file_data[params.SiteId].Rules[params.MatchType] = rule_data
 	buf := &bytes.Buffer{}
@@ -314,12 +314,12 @@ func (re *Replace) UpdateRules(request *http.Request) core.Response {
 	}
 	_, err = public.WriteFile(re.replace_path, buf.String())
 	if err != nil {
-		return core.Fail("修改失败")
+		return core.Fail(core.Lan("modules.replacement.edit.fail"))
 	}
-	ps := re.form_show[params.MatchType] + " " + params.MatchValue + " (" + oldRule.Keyword + " 替换 " + oldRule.ReValue + ") 修改为" + " (" + params.Keyward + " 替换 " + params.ReValue + ")"
-	public.WriteOptLog(fmt.Sprintf("网站[%s] 修改替换规则:  %s", params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+	ps := re.form_show[params.MatchType] + " " + params.MatchValue + " (" + oldRule.Keyword + " " + core.Lan("with") + " " + oldRule.ReValue + ") " + core.Lan("modified to") + " (" + params.Keyward + " " + core.Lan("with") + " " + params.ReValue + ")"
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.log.edit_rule"), params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 10)
-	return core.Success("修改成功")
+	return core.Success(core.Lan("modules.replacement.edit.success"))
 }
 
 func (re *Replace) DeleteRules(request *http.Request) core.Response {
@@ -337,23 +337,23 @@ func (re *Replace) DeleteRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteId == "" || params.Key == "" || params.MatchType == "" {
-		return core.Fail("数据不能为空")
+		return core.Fail(core.Lan("modules.replacement.data.empty"))
 	}
 
 	if params.MatchType != "site_rules" && params.MatchType != "uri_rules" {
-		return core.Fail("form参数错误")
+		return core.Fail(core.Lan("modules.replacement.form.param.error"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 
 	file_data, _ := re.getSpeedDatastruct()
 	if file_data == nil {
-		return core.Fail("无数据")
+		return core.Fail(core.Lan("modules.replacement.no_data"))
 	}
 
 	var flag = false
@@ -366,7 +366,7 @@ func (re *Replace) DeleteRules(request *http.Request) core.Response {
 		}
 	}
 	if !flag {
-		return core.Fail("没有该数据")
+		return core.Fail(core.Lan("modules.replacement.no_such_data"))
 	}
 	file_data[params.SiteId].Rules[params.MatchType] = rule_data
 	buf := &bytes.Buffer{}
@@ -378,23 +378,23 @@ func (re *Replace) DeleteRules(request *http.Request) core.Response {
 	}
 	_, err = public.WriteFile(re.replace_path, buf.String())
 	if err != nil {
-		return core.Fail("删除失败")
+		return core.Fail(core.Lan("modules.replacement.delete.fail"))
 	}
 
-	ps := re.form_show[params.MatchType] + " " + params.MatchValue + " [" + params.Keyward + "] 替换 [" + params.ReValue + "]"
+	ps := re.form_show[params.MatchType] + " " + params.MatchValue + " [" + params.Keyward + "] " + core.Lan("with") + " [" + params.ReValue + "]"
 	path := "/www/cloud_waf/nginx/conf.d/waf/data/replace_total/" + params.SiteId + "/count/" + params.Key
 	if !public.FileExists(path) {
-		return core.Success("清空命中成功")
+		return core.Success(core.Lan("modules.replacement.clear_hit.success"))
 	}
 	err = os.Remove(path)
 	if err != nil {
-		logging.Error("清除命中失败：", err)
+		logging.Error(core.Lan("modules.replacement.clear_hit.fail"), err)
 	}
 	public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_replace_hit?flags=%s&site=%s&info=%s", "1", params.SiteId, params.Key), 2)
 
-	public.WriteOptLog(fmt.Sprintf("网站[%s] 删除替换规则:  %s", params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.replacement.log.delete_rule"), params.SiteName, ps), public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 10)
-	return core.Success("删除成功")
+	return core.Success(core.Lan("modules.replacement.delete.success"))
 }
 
 func (re *Replace) ClearHit(request *http.Request) core.Response {
@@ -408,14 +408,14 @@ func (re *Replace) ClearHit(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteId == "" || params.Type == "" || params.Key == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.replacement.param.error"))
 	}
 	count, err := public.M("site_info").Where("site_id=?", params.SiteId).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.replacement.query_site.fail"))
 	}
 	if params.Type == "0" {
 		path := "/www/cloud_waf/nginx/conf.d/waf/data/replace_total/" + params.SiteId + "/"
@@ -424,12 +424,12 @@ func (re *Replace) ClearHit(request *http.Request) core.Response {
 	if params.Type == "1" {
 		path := "/www/cloud_waf/nginx/conf.d/waf/data/replace_total/" + params.SiteId + "/count/"
 		if !public.FileExists(path) {
-			return core.Fail("清除成功")
+			return core.Fail(core.Lan("modules.replacement.clear.success"))
 		}
 		files, err := os.ReadDir(path)
 		var flag = false
 		if err != nil {
-			return core.Fail("清除成功")
+			return core.Fail(core.Lan("modules.replacement.clear.success"))
 		}
 		for _, file := range files {
 			if file.Name() == params.Key {
@@ -439,14 +439,14 @@ func (re *Replace) ClearHit(request *http.Request) core.Response {
 			if flag {
 				path2 := path + params.Key
 				os.Remove(path2)
-				return core.Fail("清除成功")
+				return core.Fail(core.Lan("modules.replacement.clear.success"))
 			}
 		}
 	}
 	public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_replace_hit?flags=%s&site=%s&info=%s", params.Type, params.SiteId, params.Key), 2)
-	ps := fmt.Sprintf("清空网站[%s] 命中数成功", params.SiteId)
+	ps := fmt.Sprintf(core.Lan("modules.replacement.log.clear_hit"), params.SiteId)
 	public.WriteOptLog(ps, public.OPT_LOG_TYPE_REPLACEMENT, public.GetUid(request))
-	return core.Success("清除成功")
+	return core.Success(core.Lan("modules.replacement.clear.success"))
 }
 
 func (re *Replace) addRulesCof(file_data *map[string]types.Replace, site_name string, site_id string, open bool, new_rule types.ReplaceRule) bool {

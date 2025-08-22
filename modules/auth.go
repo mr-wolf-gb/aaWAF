@@ -40,12 +40,12 @@ func (au *Auth) Update(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if err = auth.ParseLicense(); err != nil {
-		return core.Fail(fmt.Errorf("解析本地授权信息失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.auth.parse_local_auth_info.fail"), err))
 	}
 	if err = au.update(); err != nil {
-		return core.Fail(fmt.Errorf("刷新授权信息失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.auth.refresh_auth_info.fail"), err))
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.auth.op.success"))
 }
 
 func (au *Auth) update() error {
@@ -63,7 +63,7 @@ func (au *Auth) update() error {
 		if err, ok := errAny.(error); ok {
 			return err
 		}
-		return errors.New("与堡塔官网通信失败：未知错误")
+		return errors.New(core.Lan("modules.auth.comm_to_bt.fail"))
 	}
 	if err := public.MapToStruct(resAny, &res); err != nil {
 		return err
@@ -85,31 +85,31 @@ func (au *Auth) Uuid(request *http.Request) core.Response {
 func (au *Auth) MountLicense(request *http.Request) core.Response {
 	err := request.ParseMultipartForm(10 << 10)
 	if err != nil {
-		return core.Fail("上传授权文件失败：文件大小不合法")
+		return core.Fail(core.Lan("modules.auth.upload_auth_file.fail.size"))
 	}
 	f, fh, err := request.FormFile("license")
 	if err != nil {
-		return core.Fail("上传授权文件失败：" + err.Error())
+		return core.Fail(core.Lan("modules.auth.upload_auth_file.fail") + err.Error())
 	}
 	defer f.Close()
 	if !strings.HasSuffix(fh.Filename, ".license") {
-		return core.Fail("上传授权文件失败：无效的授权文件 - 1")
+		return core.Fail(core.Lan("modules.auth.upload_auth_file.fail.invalid_1"))
 	}
 	bs, err := io.ReadAll(f)
 	if err != nil {
-		return core.Fail("上传授权文件失败：无效的授权文件 - 2")
+		return core.Fail(core.Lan("modules.auth.upload_auth_file.fail.invalid_2"))
 	}
 	auth, err := authorization.ParseLicense(bs, "")
 	if err != nil {
-		return core.Fail("上传授权文件失败：无效的授权文件 - 3")
+		return core.Fail(core.Lan("modules.auth.upload_auth_file.fail.invalid_3"))
 	}
 	if err = auth.Validate(); err != nil {
-		return core.Fail("上传授权文件失败：" + err.Error())
+		return core.Fail(core.Lan("modules.auth.upload_auth_file.fail") + err.Error())
 	}
 	if err = authorization.SaveLicenseFile(bs); err != nil {
-		return core.Fail("上传授权文件失败：" + err.Error())
+		return core.Fail(core.Lan("modules.auth.upload_auth_file.fail") + err.Error())
 	}
-	return core.Success("授权文件设置成功")
+	return core.Success(core.Lan("modules.auth.set_auth_file.success"))
 }
 
 func (au *Auth) Login(request *http.Request) core.Response {
@@ -130,37 +130,37 @@ func (au *Auth) Login(request *http.Request) core.Response {
 		return core.Fail(errAny)
 	}
 	if err := au.update(); err != nil {
-		logging.Error("恢复授权失败: ", err)
+		logging.Error(core.Lan("modules.auth.recover_auth.fail"), err)
 	}
-	return core.Success("绑定成功")
+	return core.Success(core.Lan("modules.auth.bind.success"))
 }
 
 func (au *Auth) Logout(request *http.Request) core.Response {
 	if !public.FileExists(public.BT_USERINFO_FILE) {
-		return core.Success("解绑成功")
+		return core.Success(core.Lan("modules.auth.unbind.success"))
 	}
 	if err := os.Remove(public.BT_USERINFO_FILE); err != nil {
-		return core.Fail("解绑失败：" + err.Error())
+		return core.Fail(core.Lan("modules.auth.unbind.fail") + err.Error())
 	}
 	auth, _ := core.Auth()
 	auth.Reset()
 	_ = authorization.UnsetLicenseFile()
 
-	return core.Success("解绑成功")
+	return core.Success(core.Lan("modules.auth.unbind.success"))
 }
 
 func (au *Auth) Userinfo(request *http.Request) core.Response {
 	if !public.FileExists(public.BT_USERINFO_FILE) {
-		return core.Fail("未绑定堡塔账号")
+		return core.Fail(core.Lan("modules.auth.not_bind_bt_account"))
 	}
 	bs, err := os.ReadFile(public.BT_USERINFO_FILE)
 	if err != nil {
-		return core.Fail("获取堡塔账号信息失败：" + err.Error())
+		return core.Fail(core.Lan("modules.auth.get_bt_account_info.fail") + err.Error())
 	}
 	userinfo := types.BtAccountInfo{}
 
 	if err = json.Unmarshal(bs, &userinfo); err != nil {
-		return core.Fail("获取堡塔账号信息失败：" + err.Error())
+		return core.Fail(core.Lan("modules.auth.get_bt_account_info.fail") + err.Error())
 	}
 	return core.Success(map[string]interface{}{
 		"phone": userinfo.Username[:3] + "****" + userinfo.Username[7:],
@@ -187,10 +187,10 @@ func (au *Auth) CreateOrder(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.ProductId == 0 {
-		return core.Fail("缺少参数[产品ID]")
+		return core.Fail(core.Lan("modules.auth.product_id.missing"))
 	}
 	if params.Cycle == 0 {
-		return core.Fail("缺少参数[授权周期]")
+		return core.Fail(core.Lan("modules.auth.auth_period.missing"))
 	}
 	res, errAny := public.PanelRequest(public.URL_BT_BRANDNEW+"/common_v2_authorization/create_order", map[string]interface{}{
 		"src":        2,
@@ -212,7 +212,7 @@ func (au *Auth) OrderStatus(request *http.Request) core.Response {
 	}
 
 	if len(params.OutTradeNo) != 15 {
-		return core.Fail("无效的订单号")
+		return core.Fail(core.Lan("modules.auth.order_no.invalid"))
 	}
 	res, errAny := public.PanelRequest(public.URL_BT_BRANDNEW+"/order/product/detect", map[string]interface{}{
 		"out_trade_no": params.OutTradeNo,
@@ -229,7 +229,7 @@ func (au *Auth) OrderStatus(request *http.Request) core.Response {
 	if orderStatus.Status == 1 {
 		if _, err := core.Auth(); err != nil {
 			if err := au.activateLicenseWithOutTradeNo(params.OutTradeNo); err != nil {
-				logging.Info("激活授权失败：", err)
+				logging.Info(core.Lan("modules.auth.activate_auth.fail"), err)
 			}
 		}
 	}
@@ -265,10 +265,10 @@ func (au *Auth) UnactivatedLicenses(request *http.Request) core.Response {
 	}
 	result := make([]item2, 0)
 	nameMap := map[int]string{
-		0: "免费版",
-		1: "专业版",
-		2: "旗舰版",
-		3: "企业版",
+		0: core.Lan("modules.auth.free_version"),
+		1: core.Lan("modules.auth.pro_version"),
+		2: core.Lan("modules.auth.flagship_version"),
+		3: core.Lan("modules.auth.enterprise_version"),
 	}
 	for k, v := range m {
 		result = append(result, item2{
@@ -314,7 +314,7 @@ func (au *Auth) ActivateLicense(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	auth.Reset()
-	return core.Success("激活成功")
+	return core.Success(core.Lan("modules.auth.activate.success"))
 }
 
 func (au *Auth) activateLicenseWithOutTradeNo(outTradeNo string) error {
@@ -332,7 +332,7 @@ func (au *Auth) activateLicenseWithOutTradeNo(outTradeNo string) error {
 		if v, ok := errAny.(error); ok {
 			return v
 		}
-		return errors.New("使用支付订单号激活授权：请求失败")
+		return errors.New(core.Lan("modules.auth.activate_with_order_no.fail"))
 	}
 	if err := public.MapToStruct(resAny, &res); err != nil {
 		return err
@@ -379,7 +379,7 @@ func (au *Auth) SubmitNps(request *http.Request) core.Response {
 	}
 	cacheKey := "AUTH__SubmitNps"
 	if cache.Has(cacheKey) {
-		return core.Fail("请不要频繁提交问卷")
+		return core.Fail(core.Lan("modules.auth.questionnaire.frequent"))
 	}
 	_, errAny := public.PanelRequest(public.URL_BT_BRANDNEW+"/contact/nps/submit", map[string]interface{}{
 		"product_type": public.NPS_TYPE,
@@ -433,7 +433,7 @@ func (au *Auth) CheckNpsSubmitted(request *http.Request) core.Response {
 func (au *Auth) ObtainTrial(request *http.Request) core.Response {
 	cacheKey := "__AUTH__OBTAINED_TRIAL__"
 	if cache.Has(cacheKey) && cache.Get(cacheKey).(int) == 1 {
-		return core.Fail("请勿重复申请！")
+		return core.Fail(core.Lan("modules.auth.apply.frequent"))
 	}
 	resAny, errAny := public.PanelRequest(public.URL_BT_AUTH+"/obtain_btw_trial", map[string]interface{}{})
 	if errAny != nil {
@@ -460,7 +460,7 @@ func (au *Auth) ObtainTrial(request *http.Request) core.Response {
 	}
 	auth.Reset()
 	cache.Set(cacheKey, 1, 86400)
-	return core.Success("申请成功")
+	return core.Success(core.Lan("modules.auth.apply.success"))
 }
 
 func (au *Auth) IsObtainedTrial(request *http.Request) core.Response {

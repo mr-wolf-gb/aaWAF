@@ -20,25 +20,25 @@ func init() {
 		speed_path:      "/www/cloud_waf/nginx/conf.d/waf/rule/speed.json",
 		speed_path_show: "/www/cloud_waf/nginx/conf.d/waf/rule/speed_show.json",
 		form_show: map[string]string{
-			"white": "不缓存规则",
-			"force": "缓存规则",
+			"white": core.Lan("modules.speed.no_cache_rules"),
+			"force": core.Lan("modules.speed.cache_rules"),
 		},
 		obj_show: map[string]string{
-			"uri":    "URI",
-			"args":   "参数",
-			"cookie": "Cookie",
-			"ipv4":   "IPV4",
-			"method": "请求方式",
-			"host":   "域名",
-			"ext":    "扩展",
-			"type":   "响应类型",
+			"uri":    core.Lan("modules.speed.uri"),
+			"args":   core.Lan("modules.speed.args"),
+			"cookie": core.Lan("modules.speed.cookie"),
+			"ipv4":   core.Lan("modules.speed.ipv4"),
+			"method": core.Lan("modules.speed.method"),
+			"host":   core.Lan("modules.speed.host"),
+			"ext":    core.Lan("modules.speed.ext"),
+			"type":   core.Lan("modules.speed.type"),
 		},
 		match_show: map[string]string{
-			"match":   "正则匹配",
-			"prefix":  "前缀",
-			"suffix":  "后缀",
-			"keyword": "关键字",
-			"=":       "完全匹配",
+			"match":   core.Lan("modules.speed.match.regex"),
+			"prefix":  core.Lan("modules.speed.match.prefix"),
+			"suffix":  core.Lan("modules.speed.match.suffix"),
+			"keyword": core.Lan("modules.speed.match.keyword"),
+			"=":       core.Lan("modules.speed.match.equal"),
 		},
 	})
 
@@ -66,32 +66,32 @@ func (sp *Speed) AddRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" {
-		return core.Fail("网站名称或id不能为空")
+		return core.Fail(core.Lan("modules.speed.site.name_id.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
-	ps := "关闭"
+	ps := core.Lan("modules.speed.close")
 	if params.Open == true {
-		ps = "开启"
+		ps = core.Lan("modules.speed.open")
 	}
 	exist := sp.is_exist(params.SiteId)
 	if strings.Contains(params.SiteId, "..") {
-		return core.Fail("文件路径错误")
+		return core.Fail(core.Lan("modules.speed.file_path.error"))
 	}
 	if exist {
 		ok := sp.openRuleStatus(params.SiteId, params.Open)
 
 		if ok == false {
-			public.WriteOptLog(fmt.Sprintf("网站 [%s] %s加速失败", params.SiteName, ps), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
-			return core.Fail("操作失败")
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.accelerate.fail"), params.SiteName, ps), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+			return core.Fail(core.Lan("modules.speed.op.fail"))
 
 		} else {
-			public.WriteOptLog(fmt.Sprintf("网站 [%s] %s加速成功", params.SiteName, ps), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.accelerate.success"), params.SiteName, ps), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
 		}
 		if params.Open == false {
 			path1 := "/www/cloud_waf/wwwroot/" + params.SiteId
@@ -102,13 +102,13 @@ func (sp *Speed) AddRules(request *http.Request) core.Response {
 			if public.FileExists(path2) {
 				err := os.RemoveAll(path2)
 				if err != nil {
-					logging.Error("清空网站统计失败：", err)
+					logging.Error(core.Lan("modules.speed.clear_site_stats.fail"), err)
 				}
 			}
 			if public.FileExists(path3) {
 				err := os.Remove(path3)
 				if err != nil {
-					logging.Error("清空网站总缓存统计失败：", err)
+					logging.Error(core.Lan("modules.speed.clear_total_cache_stats.fail"), err)
 				}
 			}
 
@@ -117,7 +117,7 @@ func (sp *Speed) AddRules(request *http.Request) core.Response {
 			public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_speed_countsize?flags=%s&site=%s", pss, params.SiteId), 2)
 		}
 		public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-		return core.Success("操作成功")
+		return core.Success(core.Lan("modules.speed.op.success"))
 	}
 
 	speedData := types.Speed{}
@@ -141,16 +141,16 @@ func (sp *Speed) AddRules(request *http.Request) core.Response {
 		bs, _ := json.Marshal(speedData)
 		_, err = public.WriteFile(sp.speed_path_show, "["+string(bs)+"]")
 		if err != nil {
-			return core.Fail("写入加速配置失败")
+			return core.Fail(core.Lan("modules.speed.write_speed_config.fail"))
 		}
 		if sp.sliceToMapLua(speedDataSlice) == false {
-			return core.Fail("写入配置失败")
+			return core.Fail(core.Lan("modules.speed.write_config.fail"))
 		} else {
-			logging.Info("map同步成功")
+			logging.Info(core.Lan("modules.speed.map_sync.success"))
 		}
-		public.WriteOptLog(fmt.Sprintf("网站 [%s] %s加速成功", params.SiteName, ps), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.accelerate.success"), params.SiteName, ps), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
 		public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-		return core.Success("添加成功")
+		return core.Success(core.Lan("modules.speed.add.success"))
 	}
 	file_data := make([]types.Speed, 0)
 	err = json.Unmarshal([]byte(json_data), &file_data)
@@ -164,20 +164,20 @@ func (sp *Speed) AddRules(request *http.Request) core.Response {
 
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		return core.Fail("写入专属规则失败")
+		return core.Fail(core.Lan("modules.speed.write_exclusive_rule.fail"))
 	}
 	if sp.sliceToMapLua(file_data) == false {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.speed.write_exclusive_rule_config.fail"))
 	} else {
-		logging.Info("map同步成功")
+		logging.Info(core.Lan("modules.speed.map_sync.success"))
 	}
 	_, err = public.WriteFile(sp.speed_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("添加失败")
+		return core.Fail(core.Lan("modules.speed.add.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("网站[%s]开启加速", params.SiteName), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.log.enable_acceleration"), params.SiteName), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	return core.Success("新增成功")
+	return core.Success(core.Lan("modules.speed.new.success"))
 }
 
 func (sp *Speed) UpdateRules(request *http.Request) core.Response {
@@ -196,20 +196,20 @@ func (sp *Speed) UpdateRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" || params.Key == "" || params.Type == "" || params.Value == "" {
-		return core.Fail("数据不能为空")
+		return core.Fail(core.Lan("modules.speed.data.empty"))
 	}
 	if params.Form != "white" && params.Form != "force" {
-		return core.Fail("form参数错误")
+		return core.Fail(core.Lan("modules.speed.form.param.error"))
 	}
 	if params.Type != "match" && params.Type != "prefix" && params.Type != "suffix" && params.Type != "=" && params.Type != "keyword" {
-		return core.Fail("type参数错误")
+		return core.Fail(core.Lan("modules.speed.type.param.error"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	file_data, _ := sp.getSpeedShowData2()
 	for i := range file_data {
@@ -262,17 +262,17 @@ func (sp *Speed) UpdateRules(request *http.Request) core.Response {
 	var data_o []types.Speed
 	err = json.Unmarshal(rules_js, &data_o)
 	if sp.sliceToMapLua(data_o) == false {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.speed.write_exclusive_rule_config.fail"))
 	} else {
-		logging.Info("map同步成功")
+		logging.Info(core.Lan("modules.speed.map_sync.success"))
 	}
 	_, err = public.WriteFile(sp.speed_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入失败")
+		return core.Fail(core.Lan("modules.speed.write.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("网站[%s] 加速规则变更  %s 修改: %s %s %s  ", params.SiteName, sp.form_show[params.Form], sp.obj_show[params.Obj], sp.match_show[params.Type], params.Value), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.log.edit_rule"), params.SiteName, sp.form_show[params.Form], sp.obj_show[params.Obj], sp.match_show[params.Type], params.Value), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	return core.Success("修改成功")
+	return core.Success(core.Lan("modules.speed.edit.success"))
 }
 
 func (sp *Speed) DelRules(request *http.Request) core.Response {
@@ -288,26 +288,26 @@ func (sp *Speed) DelRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" || len(params.Key) == 0 || params.Form == "" {
-		return core.Fail("数据不能为空")
+		return core.Fail(core.Lan("modules.speed.data.empty"))
 	}
 	if params.Form != "white" && params.Form != "force" {
-		return core.Fail("form参数错误")
+		return core.Fail(core.Lan("modules.speed.form.param.error"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	isok, pss := sp.delSpeedRule(params.SiteId, params.Form, params.Key, timestamp)
 	if isok == false {
-		return core.Fail("删除失败")
+		return core.Fail(core.Lan("modules.speed.delete.fail"))
 	}
 
-	public.WriteOptLog(fmt.Sprintf("删除网站[%s] %s 规则:  %s", params.SiteName, sp.form_show[params.Form], pss), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.log.delete_rule"), params.SiteName, sp.form_show[params.Form], pss), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	return core.Success("删除成功")
+	return core.Success(core.Lan("modules.speed.delete.success"))
 
 }
 
@@ -373,14 +373,14 @@ func (sp *Speed) OpenRuleStatus(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" {
-		return core.Fail("网站名称或id不能为空")
+		return core.Fail(core.Lan("modules.speed.site.name_id.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	file_data, _ := sp.getSpeedShowData2()
 	for i := range file_data {
@@ -396,21 +396,21 @@ func (sp *Speed) OpenRuleStatus(request *http.Request) core.Response {
 
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		logging.Error("转json失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.json_transform.fail"), err)
 	}
 
 	if sp.sliceToMapLua(file_data) == false {
 
-		return core.Fail("写入配置失败")
+		return core.Fail(core.Lan("modules.speed.write_config.fail"))
 	} else {
-		logging.Info("map同步成功")
+		logging.Info(core.Lan("modules.speed.map_sync.success"))
 	}
 	_, err = public.WriteFile(sp.speed_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入配置失败")
+		return core.Fail(core.Lan("modules.speed.write_config.fail"))
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	return core.Success("修改成功")
+	return core.Success(core.Lan("modules.speed.edit.success"))
 
 }
 
@@ -427,33 +427,33 @@ func (sp *Speed) ClearCache(request *http.Request) core.Response {
 	}
 	if params.Type != "0" {
 		if params.SiteName == "" || params.SiteId == "" {
-			return core.Fail("网站名称或id不能为空")
+			return core.Fail(core.Lan("modules.speed.site.name_id.empty"))
 		}
 	}
 
 	if params.Type == "2" && params.Uri == "" {
-		return core.Fail("uri不能为空")
+		return core.Fail(core.Lan("modules.speed.uri.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	ps := ""
 	if params.Type == "0" {
 		path := "/www/cloud_waf/nginx/conf.d/waf/data/speed_cache"
 		if !public.FileExists(path) {
-			return core.Success("清空成功")
+			return core.Success(core.Lan("modules.speed.clear.success"))
 		}
 
 		err := os.RemoveAll(path)
 		if err != nil {
-			return core.Fail("清空缓存失败")
+			return core.Fail(core.Lan("modules.speed.clear_cache.fail"))
 		}
 
-		ps = "清空全部缓存成功"
+		ps = core.Lan("modules.speed.clear_all_cache.success")
 
 	}
 
@@ -462,20 +462,20 @@ func (sp *Speed) ClearCache(request *http.Request) core.Response {
 		path1 := "/www/cloud_waf/nginx/conf.d/waf/data/speed_cache/" + params.SiteId + "/count_size"
 		err := os.Remove(path1)
 		if err != nil {
-			logging.Error("清空缓存总统计失败：", err)
+			logging.Error(core.Lan("modules.speed.clear_total_cache.fail"), err)
 		}
 		is_ok := public.DeleteFileAll(path)
 		if !is_ok {
-			logging.Error("清空缓存失败：", err)
+			logging.Error(core.Lan("modules.speed.clear_cache.fail"), err)
 		}
 
-		ps = fmt.Sprintf("清空网站[%s]缓存成功", params.SiteName)
+		ps = fmt.Sprintf(core.Lan("modules.speed.log.clear_site_cache"), params.SiteName)
 		public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_speed_countsize?flags=%s&site=%s", params.Type, params.SiteId), 2)
 
 	}
 
 	public.WriteOptLog(ps, public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
-	return core.Success("清空成功")
+	return core.Success(core.Lan("modules.speed.clear.success"))
 
 }
 
@@ -492,61 +492,61 @@ func (sp *Speed) ClearCount(request *http.Request) core.Response {
 	}
 	if params.Type != "0" {
 		if params.SiteName == "" || params.SiteId == "" {
-			return core.Fail("网站名称或id不能为空")
+			return core.Fail(core.Lan("modules.speed.site.name_id.empty"))
 		}
 	}
 	if params.Type == "3" && params.Key == "" {
-		return core.Fail("key不能为空")
+		return core.Fail(core.Lan("modules.speed.key.empty"))
 	}
 	if strings.Contains(params.Key, "..") {
-		return core.Fail("key不合法")
+		return core.Fail(core.Lan("modules.speed.key.invalid"))
 	}
 
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	ps := ""
 	if params.Type == "0" {
 		path := "/www/cloud_waf/nginx/conf.d/waf/data/speed_total"
 		if !public.FileExists(path) {
-			return core.Success("清空成功")
+			return core.Success(core.Lan("modules.speed.clear.success"))
 		}
 
 		err := os.RemoveAll(path)
 		if err != nil {
-			logging.Error("清空缓存失败：", err)
+			logging.Error(core.Lan("modules.speed.clear_cache.fail"), err)
 		}
 		public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_speed_hit?flags=%s&site=all&info=all", params.Type), 2)
-		ps = "清空全部命中成功"
+		ps = core.Lan("modules.speed.clear_all_hit.success")
 
 	}
 
 	if params.Type == "1" {
 		path := "/www/cloud_waf/nginx/conf.d/waf/data/speed_total/" + params.SiteId + "/"
 		if !public.FileExists(path) {
-			return core.Success("清空全部缓存成功")
+			return core.Success(core.Lan("modules.speed.clear_all_cache.success"))
 		}
 		err := os.RemoveAll(path)
 		if err != nil {
-			logging.Error("清空缓存失败：", err)
+			logging.Error(core.Lan("modules.speed.clear_cache.fail"), err)
 		}
 		public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_speed_hit?flags=%s&site=%s&info=all", params.Type, params.SiteId), 2)
-		ps = fmt.Sprintf("清空网站[%s]命中成功", params.SiteName)
+		ps = fmt.Sprintf(core.Lan("modules.speed.log.clear_site_hit"), params.SiteName)
 
 	}
 	if params.Type == "2" {
 		date := time.Now().Format("2006-01-02")
 		path := "/www/cloud_waf/nginx/conf.d/waf/data/speed_total/" + params.SiteId + "/hit/" + date + ".json"
 		if !public.FileExists(path) {
-			return core.Success("清空成功")
+			return core.Success(core.Lan("modules.speed.clear.success"))
 		}
 		fi, err := os.Stat(path)
 		if err != nil {
-			return core.Fail("清空命中失败")
+			return core.Fail(core.Lan("modules.speed.clear_hit.fail"))
 
 		}
 		if fi.IsDir() {
@@ -556,18 +556,18 @@ func (sp *Speed) ClearCount(request *http.Request) core.Response {
 
 		}
 		public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_speed_hit?flags=%s&site=%s&info=%s", params.Type, params.SiteId, date), 2)
-		ps = fmt.Sprintf("清空网站[%s] 今日命中成功", params.SiteName)
+		ps = fmt.Sprintf(core.Lan("modules.speed.log.clear_today_hit"), params.SiteName)
 
 	}
 
 	if params.Type == "3" {
 		path := "/www/cloud_waf/nginx/conf.d/waf/data/speed_total/" + params.SiteId + "/hit/" + params.Key + ".json"
 		if !public.FileExists(path) {
-			return core.Success("清空命中成功")
+			return core.Success(core.Lan("modules.speed.clear_hit.success"))
 		}
 		fi, err := os.Stat(path)
 		if err != nil {
-			return core.Fail("清空命中失败")
+			return core.Fail(core.Lan("modules.speed.clear_hit.fail"))
 
 		}
 		if fi.IsDir() {
@@ -576,11 +576,11 @@ func (sp *Speed) ClearCount(request *http.Request) core.Response {
 			os.Remove(path)
 		}
 		public.HttpPostByToken(fmt.Sprintf("http://127.0.0.251/clear_speed_hit?flags=%s&site=%s&info=%s", params.Type, params.SiteId, params.Key), 2)
-		ps = fmt.Sprintf("清空网站[%s] 规则命中成功", params.SiteName)
+		ps = fmt.Sprintf(core.Lan("modules.speed.log.clear_rule_hit"), params.SiteName)
 	}
 
 	public.WriteOptLog(ps, public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
-	return core.Success("清空命中成功")
+	return core.Success(core.Lan("modules.speed.clear_hit.success"))
 
 }
 
@@ -596,14 +596,14 @@ func (sp *Speed) UpdateSite(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" {
-		return core.Fail("网站名称或id不能为空")
+		return core.Fail(core.Lan("modules.speed.site.name_id.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	file_data, _ := sp.getSpeedShowData2()
 	for i := range file_data {
@@ -616,20 +616,20 @@ func (sp *Speed) UpdateSite(request *http.Request) core.Response {
 
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		logging.Error("转json失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.json_transform.fail"), err)
 	}
 	if sp.sliceToMapLua(file_data) == false {
-		return core.Fail("写入配置失败")
+		return core.Fail(core.Lan("modules.speed.write_config.fail"))
 	} else {
-		logging.Info("map同步成功")
+		logging.Info(core.Lan("modules.speed.map_sync.success"))
 	}
 	_, err = public.WriteFile(sp.speed_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入配置失败")
+		return core.Fail(core.Lan("modules.speed.write_config.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("修改网站[%s] 加速配置过期时间为%d 秒, 单条缓存大小为 %d MB ", params.SiteName, params.Expire, params.Size), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.log.edit_config"), params.SiteName, params.Expire, params.Size), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	return core.Success("修改成功")
+	return core.Success(core.Lan("modules.speed.edit.success"))
 }
 
 func (sp *Speed) AddRulesInfo(request *http.Request) core.Response {
@@ -647,20 +647,20 @@ func (sp *Speed) AddRulesInfo(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" || params.Type == "" || params.Value == "" {
-		return core.Fail("数据不能为空")
+		return core.Fail(core.Lan("modules.speed.data.empty"))
 	}
 	if params.Form != "white" && params.Form != "force" {
-		return core.Fail("form参数错误")
+		return core.Fail(core.Lan("modules.speed.form.param.error"))
 	}
 	if params.Type != "match" && params.Type != "prefix" && params.Type != "suffix" && params.Type != "=" && params.Type != "keyword" && public.IsIpv4(params.Type) != true {
-		return core.Fail("type参数错误")
+		return core.Fail(core.Lan("modules.speed.type.param.error"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 
 	file_data, _ := sp.getSpeedShowData2()
@@ -702,17 +702,17 @@ func (sp *Speed) AddRulesInfo(request *http.Request) core.Response {
 	var data_o []types.Speed
 	err = json.Unmarshal(rules_js, &data_o)
 	if sp.sliceToMapLua(data_o) == false {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.speed.write_exclusive_rule_config.fail"))
 	} else {
-		logging.Info("map同步成功")
+		logging.Info(core.Lan("modules.speed.map_sync.success"))
 	}
 	_, err = public.WriteFile(sp.speed_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入失败")
+		return core.Fail(core.Lan("modules.speed.write.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("添加网站[%s] %s 规则:  %s %s %s", params.SiteName, sp.form_show[params.Form], sp.obj_show[params.Obj], sp.match_show[params.Type], params.Value), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.speed.log.add_rule"), params.SiteName, sp.form_show[params.Form], sp.obj_show[params.Obj], sp.match_show[params.Type], params.Value), public.OPT_LOG_TYPE_SITE_SPEED, public.GetUid(request))
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	return core.Success("修改成功")
+	return core.Success(core.Lan("modules.speed.edit.success"))
 }
 
 func (sp *Speed) GetRulesInfo(request *http.Request) core.Response {
@@ -726,14 +726,14 @@ func (sp *Speed) GetRulesInfo(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteName == "" || params.SiteId == "" {
-		return core.Fail("网站名称或id不能为空")
+		return core.Fail(core.Lan("modules.speed.site.name_id.empty"))
 	}
 	count, err := public.M("site_info").Where("site_id=? and site_name=?", params.SiteId, params.SiteName).Count()
 	if err != nil {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询站点失败")
+		return core.Fail(core.Lan("modules.speed.query_site.fail"))
 	}
 	file_data, _ := sp.getSpeedShowData()
 
@@ -928,7 +928,7 @@ func (sp *Speed) delSpeedRule(site_id string, form string, key []string, timesta
 	if sp.sliceToMapLua(data_o) == false {
 		return false, nil
 	} else {
-		logging.Info("map同步成功")
+		logging.Info(core.Lan("modules.speed.map_sync.success"))
 	}
 	_, err = public.WriteFile(sp.speed_path_show, string(rules_js))
 	if err != nil {

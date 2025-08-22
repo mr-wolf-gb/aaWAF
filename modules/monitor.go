@@ -26,11 +26,11 @@ func (mo *Monitor) History(request *http.Request) core.Response {
 	}
 
 	if params.ShowType == 0 {
-		return core.Fail("缺少参数：show_type")
+		return core.Fail(core.Lan("modules.monitor.show_type.missing"))
 	}
 
 	if params.Mountpoint == "" {
-		return core.Fail("缺少参数：mountpoint")
+		return core.Fail(core.Lan("modules.monitor.mountpoint.missing"))
 	}
 
 	size := 0
@@ -46,7 +46,7 @@ func (mo *Monitor) History(request *http.Request) core.Response {
 		size = 1440 * 7
 		sec = 86400 * 7
 	default:
-		return core.Fail(fmt.Sprintf("获取图表数据失败：无效的show_type %d", params.ShowType))
+		return core.Fail(fmt.Sprintf(core.Lan("modules.monitor.get_chart.fail.invalid_show_type"), params.ShowType))
 	}
 	curTime := time.Now().Truncate(1 * time.Minute)
 	timeSection := []int64{curTime.Unix() - sec, curTime.Unix() - 60}
@@ -83,7 +83,7 @@ func (mo *Monitor) History(request *http.Request) core.Response {
 	}, "time_minute", "create_time")
 
 	if err != nil {
-		return core.Fail(fmt.Errorf("获取图表数据失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.monitor.get_chart.fail"), err))
 	}
 
 	err = cluster_core.ToolsSingleton().QueryChartData(public.M("request_total").
@@ -123,7 +123,7 @@ func (mo *Monitor) History(request *http.Request) core.Response {
 	}, "time_minute", "create_time")
 
 	if err != nil {
-		return core.Fail(fmt.Errorf("获取图表数据失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.monitor.get_chart.fail"), err))
 	}
 	err = cluster_core.ToolsSingleton().QueryChartData(public.M("btwaf_realtime_history").
 		WhereBetween("create_time", []any{timeSection[0], timeSection[1]}), timeSection, &res, []string{
@@ -135,7 +135,7 @@ func (mo *Monitor) History(request *http.Request) core.Response {
 	}, "time_minute", "create_time")
 
 	if err != nil {
-		return core.Fail(fmt.Errorf("获取图表数据失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.monitor.get_chart.fail"), err))
 	}
 
 	return core.Success(res)

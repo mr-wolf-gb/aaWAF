@@ -35,7 +35,7 @@ func (o *OptLog) List(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail("获取操作日志失败")
+		return core.Fail(core.Lan("modules.optlog.list.fail"))
 	}
 
 	return core.Success(res)

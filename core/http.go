@@ -143,7 +143,7 @@ func (s *Server) AuthMiddleware(w http.ResponseWriter, r *http.Request) bool {
 	if err != nil {
 		err = Fail(err).WriteResponse(w, 401)
 		if err != nil {
-			logging.Info(uri, "响应失败：", err)
+			logging.Info(uri, language.Locate("core.http.response.fail"), err)
 		}
 		return false
 	}
@@ -165,10 +165,10 @@ func (s *Server) Run() error {
 	defer func() {
 		if err := recover(); err != nil {
 			logging.Error(PanicTrace(err))
-			log.Println("检测到panic错误，正在尝试重启Web服务...")
+			log.Println(language.Locate("core.http.panic_restarting"))
 			err = s.Run()
 			if err != nil {
-				log.Println("Web服务启动失败：", err)
+				log.Println(language.Locate("core.http.start.fail"), err)
 			}
 		}
 	}()
@@ -185,7 +185,7 @@ func (s *Server) Run() error {
 		w = NewLoggingResponseWriter(w, r)
 		err := DrainRequestBody(w.(*LoggingResponseWriter), r)
 		if err != nil {
-			logging.Info("拷贝请求内容失败：", err)
+			logging.Info(language.Locate("core.http.copy_req_body.fail"), err)
 		}
 		defer func() {
 			if err := recover(); err != nil {
@@ -233,7 +233,7 @@ func (s *Server) Run() error {
 					response, err := CallModuleAction(module, action, r)
 					if err != nil {
 						if err = Fail(err).WriteResponse(w, 400); err != nil {
-							logging.Info(uri, "响应失败：", err)
+							logging.Info(uri, language.Locate("core.http.response.fail"), err)
 						}
 						return true
 					}
@@ -252,7 +252,7 @@ func (s *Server) Run() error {
 						w = gzipResponseWriter{Writer: gz, ResponseWriter: w}
 					}
 					if err = response.(Response).WriteResponse(w, statusCode); err != nil {
-						logging.Info(uri, "响应失败：", err)
+						logging.Info(uri, language.Locate("core.http.response.fail"), err)
 					}
 					return true
 				}
@@ -329,7 +329,7 @@ func (s *Server) Run() error {
 </body>
 </html>`).WriteResponse(w, http.StatusNotFound)
 			if err != nil {
-				logging.Info(uri, "响应失败：", err)
+				logging.Info(uri, language.Locate("core.http.response.fail"), err)
 			}
 			return true
 		})
@@ -451,7 +451,7 @@ func ReadWebSocketMessage(ws *websocket.Conn) (message string, err error) {
 		return message, err
 	}
 	if len(buf) == 0 {
-		return message, errors.New("检测到WebSocket客户端已主动断开连接")
+		return message, errors.New(language.Locate("core.http.ws_client_disconnected"))
 	}
 
 	return string(buf), nil

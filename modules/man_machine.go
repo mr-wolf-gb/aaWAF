@@ -22,9 +22,9 @@ func init() {
 		manm_path:        "/www/cloud_waf/nginx/conf.d/waf/rule/cc.json",
 		manm_path_backup: "/www/cloud_waf/nginx/conf.d/waf/rule/cc_backup.json",
 		type_info: map[string]string{
-			"huadong": "滑动验证",
-			"js":      "无感验证",
-			"renji":   "等待5s验证",
+			"huadong": core.Lan("modules.exclusive_rules.huadong"),
+			"js":      core.Lan("modules.exclusive_rules.js"),
+			"renji":   core.Lan("modules.exclusive_rules.renji"),
 		},
 	})
 
@@ -77,7 +77,7 @@ func (m *Manm) AddRules(request *http.Request) core.Response {
 		}
 	}
 	if len(merged_rule.([]interface{})) == 0 {
-		return core.Fail("规则不能为空")
+		return core.Fail(core.Lan("modules.man_machine.rule.empty"))
 	}
 
 	manData := types.ManData{
@@ -95,15 +95,15 @@ func (m *Manm) AddRules(request *http.Request) core.Response {
 	if err != nil {
 		buf, err := m.unescapeOne(manData)
 		if err != nil {
-			return core.Fail("JSON编码失败")
+			return core.Fail(core.Lan("modules.limit.json_encode.fail"))
 		}
 
 		_, err = public.WriteFile(m.manm_path, "["+buf.String()+"]")
 		if err != nil {
-			return core.Fail("写入人机验证配置失败2")
+			return core.Fail(core.Lan("modules.man_machine.write_config.fail"))
 		}
 
-		return core.Success("添加成功")
+		return core.Success(core.Lan("modules.man_machine.add.success"))
 	}
 	file_data := make([]types.ManData, 0)
 	err = json.Unmarshal([]byte(json_data), &file_data)
@@ -111,9 +111,9 @@ func (m *Manm) AddRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if m.backupManm(file_data) == false {
-		logging.Error("备份人机验证配置失败")
+		logging.Error(core.Lan("modules.man_machine.backup.fail"))
 	} else {
-		logging.Info("备份人机验证配置成功")
+		logging.Info(core.Lan("modules.man_machine.backup.success"))
 	}
 
 	file_data = append(file_data, manData)
@@ -124,28 +124,28 @@ func (m *Manm) AddRules(request *http.Request) core.Response {
 	buf, err := m.unescape(file_data)
 	if err != nil {
 
-		return core.Fail("JSON编码失败")
+		return core.Fail(core.Lan("modules.limit.json_encode.fail"))
 	}
 
 	_, err = public.WriteFile(m.manm_path, buf.String())
 	if err != nil {
 		if m.backspaceManm() == false {
-			logging.Error("回退人机验证配置失败")
+			logging.Error(core.Lan("modules.man_machine.rollback.fail"))
 		} else {
-			logging.Info("回退人机验证配置成功")
+			logging.Info(core.Lan("modules.man_machine.rollback.success"))
 		}
 
-		return core.Fail("写入人机验证配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 	rule_log = rule_log + "【" + m.type_info[public.InterfaceToString(rule["auth_type"])] + "】"
-	public.WriteOptLog(fmt.Sprintf("添加人机验证规则成功: %s 备注: %s", rule_log, params["ps"].(string)), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
-	return core.Success("添加成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.man_machine.add_rule.success"), rule_log, params["ps"].(string)), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
+	return core.Success(core.Lan("modules.man_machine.add.success"))
 }
 
 func (m *Manm) DelRules(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"key"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"key"}, core.Lan("modules.man_machine.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -160,9 +160,9 @@ func (m *Manm) DelRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if m.backupManm(file_data) == false {
-		logging.Error("备份人机验证配置失败")
+		logging.Error(core.Lan("modules.man_machine.backup.fail"))
 	} else {
-		logging.Info("备份人机验证配置成功")
+		logging.Info(core.Lan("modules.man_machine.backup.success"))
 	}
 	del_rules := make([]types.ManData, 0)
 	for i := len(file_data) - 1; i >= 0; i-- {
@@ -180,20 +180,20 @@ func (m *Manm) DelRules(request *http.Request) core.Response {
 
 	buf, err := m.unescape(file_data)
 	if err != nil {
-		return core.Fail("JSON编码失败")
+		return core.Fail(core.Lan("modules.limit.json_encode.fail"))
 	}
 	_, err = public.WriteFile(m.manm_path, buf.String())
 	if err != nil {
 		if m.backspaceManm() == false {
-			logging.Error("回退人机验证配置失败")
+			logging.Error(core.Lan("modules.man_machine.rollback.fail"))
 		} else {
-			logging.Info("回退人机验证配置成功")
+			logging.Info(core.Lan("modules.man_machine.rollback.success"))
 		}
-		return core.Fail("写入人机验证配置失败2")
+		return core.Fail(core.Lan("modules.man_machine.write_config.fail"))
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("删除人机验证规则成功: %s", rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
-	return core.Success("删除成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.man_machine.delete_rule.success"), rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
+	return core.Success(core.Lan("modules.man_machine.delete.success"))
 
 }
 
@@ -217,7 +217,7 @@ func (m *Manm) GetList(request *http.Request) core.Response {
 				if ruleMap, ok := rule.(map[string]interface{}); ok {
 					if sites, ok := ruleMap["sites"].(map[string]interface{}); ok {
 						if _, ok := sites["allsite"]; ok {
-							sites["server_name"] = "所有网站"
+							sites["server_name"] = core.Lan("modules.man_machine.all_sites")
 						} else {
 							site_id := ""
 							for k, _ := range sites {
@@ -325,15 +325,15 @@ func (m *Manm) OffAuthtype(request *http.Request) core.Response {
 			rule_log = file_data[i].RuleLog
 			if file_data[i].Open != open {
 				if open == 0 {
-					log = "禁用规则"
+					log = core.Lan("modules.man_machine.disable_rule")
 				} else {
-					log = "启用规则"
+					log = core.Lan("modules.man_machine.enable_rule")
 				}
 				file_data[i].Open = open
 			}
 			if file_data[i].AuthType != auth_type {
 				file_data[i].AuthType = auth_type
-				log = "修改验证方式为 " + m.type_info[auth_type]
+				log = core.Lan("modules.man_machine.edit_auth_type") + m.type_info[auth_type]
 			}
 			file_data[i].Timestamp = timestamp
 			break
@@ -342,15 +342,15 @@ func (m *Manm) OffAuthtype(request *http.Request) core.Response {
 
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		logging.Error("转json失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.json_transform.fail"), err)
 	}
 	_, err = public.WriteFile(m.manm_path, string(rules_js))
 	if err != nil {
-		return core.Fail("写入人机验证配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("%s  %s 成功", log, rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
-	return core.Success("修改成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.man_machine.log.op_success"), log, rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
+	return core.Success(core.Lan("modules.man_machine.edit_rule.success"))
 
 }
 
@@ -383,16 +383,16 @@ func (m *Manm) ClearCount(request *http.Request) core.Response {
 	}
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		logging.Error("转json失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.json_transform.fail"), err)
 	}
 	_, err = public.WriteFile(m.manm_path, string(rules_js))
 	if err != nil {
 
-		return core.Fail("写入人机验证配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("清空人机验证命中次数成功: %s", rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
-	return core.Success("清空成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.man_machine.clear_hit.success"), rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
+	return core.Success(core.Lan("modules.exclusive_rules.clear.success"))
 
 }
 
@@ -416,9 +416,9 @@ func (m *Manm) UpdateRules(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if m.backupManm(file_data) == false {
-		logging.Error("备份人机验证配置失败")
+		logging.Error(core.Lan("modules.man_machine.backup.fail"))
 	} else {
-		logging.Info("备份人机验证配置成功")
+		logging.Info(core.Lan("modules.man_machine.backup.success"))
 	}
 
 	del_rules := make([]types.ManData, 0)
@@ -467,7 +467,7 @@ func (m *Manm) UpdateRules(request *http.Request) core.Response {
 		}
 	}
 	if len(merged_rule.([]interface{})) == 0 {
-		return core.Fail("规则不能为空")
+		return core.Fail(core.Lan("modules.man_machine.rule.empty"))
 	}
 
 	manData := types.ManData{
@@ -488,21 +488,21 @@ func (m *Manm) UpdateRules(request *http.Request) core.Response {
 	buf, err := m.unescape(file_data)
 	if err != nil {
 
-		return core.Fail("JSON编码失败")
+		return core.Fail(core.Lan("modules.limit.json_encode.fail"))
 	}
 	_, err = public.WriteFile(m.manm_path, buf.String())
 	if err != nil {
 		if m.backspaceManm() == false {
-			logging.Error("回退人机验证配置失败")
+			logging.Error(core.Lan("modules.man_machine.rollback.fail"))
 		} else {
-			logging.Info("回退人机验证配置成功")
+			logging.Info(core.Lan("modules.man_machine.rollback.success"))
 		}
-		return core.Fail("写入人机验证配置失败2")
+		return core.Fail(core.Lan("modules.man_machine.write_config.fail"))
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 	rule_log = rule_log + "【" + m.type_info[public.InterfaceToString(rule["auth_type"])] + "】"
-	public.WriteOptLog(fmt.Sprintf("编辑人机验证规则成功: %s 修改为 %s", rule_log_del, rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
-	return core.Success("修改成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.man_machine.edit_rule.success.log"), rule_log_del, rule_log), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
+	return core.Success(core.Lan("modules.man_machine.edit.success"))
 }
 
 func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) {
@@ -515,7 +515,7 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 	errStr := ""
 	log_sites := ""
 	rule_log := ""
-	rule_log += "【全部网站】"
+	rule_log += core.Lan("modules.man_machine.all_sites.log")
 	for _, rule := range rules.([]interface{}) {
 		if v, ok := rule.(map[string]interface{}); ok {
 			switch v["t"].(string) {
@@ -523,17 +523,17 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 			case "sites":
 				sites[v["value"].(string)] = 1
 				log_sites = v["value"].(string)
-				rule_log += fmt.Sprintf("【网站: %s】", v["value"])
+				rule_log += fmt.Sprintf(core.Lan("modules.man_machine.site.log"), v["value"])
 
 			case "url":
 				if v["value"] == "" {
 					success = false
-					errStr += fmt.Sprintf("url为空: %s\n", v["value"])
+					errStr += fmt.Sprintf(core.Lan("modules.man_machine.url_empty.log"), v["value"])
 				}
 
 				if v["value"] == "/" {
 					success = false
-					errStr += fmt.Sprintf("url不能添加: / ")
+					errStr += fmt.Sprintf(core.Lan("modules.man_machine.url_root.log"))
 				}
 				url := html.UnescapeString(public.InterfaceToString(v["value"]))
 				url = public.EscapeSymbols(url, []string{"?", "&"})
@@ -543,28 +543,28 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 						"type":  v["match"],
 						"param": v["sub_v"],
 					})
-					rule_log += fmt.Sprintf("【url[%s]-参数匹配-[%s]】", url, v["sub_v"])
+					rule_log += fmt.Sprintf(core.Lan("modules.man_machine.url_param_match.log"), url, v["sub_v"])
 				} else {
 					urldata = append(urldata, map[string]interface{}{
 						"url":  url,
 						"type": v["match"],
 					})
 					match_type := map[string]string{
-						"keyword": "关键词匹配",
-						"prefix":  "前缀匹配",
-						"suffix":  "后缀匹配",
-						"=":       "完全匹配",
-						"match":   "正则匹配",
+						"keyword": core.Lan("modules.man_machine.keyword_match"),
+						"prefix":  core.Lan("modules.man_machine.prefix_match"),
+						"suffix":  core.Lan("modules.man_machine.suffix_match"),
+						"=":       core.Lan("modules.man_machine.eq_match"),
+						"match":   core.Lan("modules.man_machine.regexp_match"),
 					}
-					rule_log += fmt.Sprintf("【url-%s-[%s]】", match_type[v["match"].(string)], url)
+					rule_log += fmt.Sprintf(core.Lan("modules.man_machine.url_match.log"), match_type[v["match"].(string)], url)
 				}
 			case "city":
-				if v["value"] != "中国" && v["value"] != "海外" && v["value"] != "香港" && v["value"] != "台湾" && v["value"] != "澳门" {
+				if v["value"] != core.Lan("modules.area.china") && v["value"] != core.Lan("modules.area.overseas") && v["value"] != core.Lan("modules.area.hongkong") && v["value"] != core.Lan("modules.area.taiwan") && v["value"] != core.Lan("modules.area.macao") {
 					success = false
-					errStr += fmt.Sprintf("地区格式错误: %s\n", v["value"])
+					errStr += fmt.Sprintf(core.Lan("modules.man_machine.area_format.error"), v["value"])
 				}
 				city[v["value"].(string)] = 1
-				rule_log += fmt.Sprintf("【地区-完全匹配-[%s]】", v["value"])
+				rule_log += fmt.Sprintf(core.Lan("modules.man_machine.area_eq_match.log"), v["value"])
 
 			case "ipv6":
 				parts := strings.Split(v["value"].(string), "/")
@@ -572,16 +572,16 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 					l, ok := strconv.Atoi(parts[1])
 					if ok != nil {
 						success = false
-						errStr += fmt.Sprintf("IPV6格式错误: %s\n ", v["value"])
+						errStr += fmt.Sprintf(core.Lan("modules.man_machine.ipv6_format.error"), v["value"])
 					}
 					if l < 5 || l > 128 {
 						success = false
-						errStr += fmt.Sprintf("子网掩码范围不正确: %s\n ", v["value"])
+						errStr += fmt.Sprintf(core.Lan("modules.man_machine.subnet_mask.error"), v["value"])
 					}
 				} else {
 					if !public.IsIpv6(parts[0]) {
 						success = false
-						errStr += fmt.Sprintf("IPV6格式错误: %s\n ", v["value"])
+						errStr += fmt.Sprintf(core.Lan("modules.man_machine.ipv6_format.error"), v["value"])
 					}
 				}
 
@@ -600,19 +600,19 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 						},
 					})
 					if v["match"] == "ip_group_r" {
-						flags = "不"
+						flags = core.Lan("modules.man_machine.not")
 					}
-					rule_log += fmt.Sprintf("【源ip- %s匹配ip组-[%s]】", flags, v["value"])
+					rule_log += fmt.Sprintf(core.Lan("modules.man_machine.ip_group_match.log"), flags, v["value"])
 				}
 
 				if v["match"] == "ip" || v["match"] == "ip_r" {
 					if !public.IsIpv4(v["value"].(string)) || !public.IsIpv4(v["sub_v"].(string)) {
 						success = false
-						errStr += fmt.Sprintf("IP格式错误: %s\n", v["value"])
+						errStr += fmt.Sprintf(core.Lan("modules.man_machine.ip_format.error"), v["value"])
 					}
 					if public.IpToLong(v["value"].(string)) > public.IpToLong(v["sub_v"].(string)) {
 						success = false
-						errStr += fmt.Sprintf("IP范围错误:起始IP %s > 结束IP %s \n", v["value"], v["sub_v"])
+						errStr += fmt.Sprintf(core.Lan("modules.man_machine.ip_range.error"), v["value"], v["sub_v"])
 					}
 
 					ip = append(ip, map[string]interface{}{
@@ -623,18 +623,18 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 						},
 					})
 					if v["match"] == "ip_r" {
-						flags = "不"
+						flags = core.Lan("modules.man_machine.not")
 					}
-					rule_log += fmt.Sprintf("【源ip- %s匹配ip-[%s-%s]】", flags, v["value"], v["sub_v"])
+					rule_log += fmt.Sprintf(core.Lan("modules.man_machine.ip_match.log"), flags, v["value"], v["sub_v"])
 				}
 				if v["match"] == "ip_section" || v["match"] == "ip_section_r" {
 					if !public.IsIpv4(v["value"].(string)) || !public.IsIpv4(v["sub_v"].(string)) {
 						success = false
-						errStr += fmt.Sprintf("IP格式错误: %s\n", v["value"])
+						errStr += fmt.Sprintf(core.Lan("modules.man_machine.ip_format.error"), v["value"])
 					}
 					if public.IpToLong(v["value"].(string)) > public.IpToLong(v["sub_v"].(string)) {
 						success = false
-						errStr += fmt.Sprintf("IP范围错误:起始IP %s > 结束IP %s \n", v["value"], v["sub_v"])
+						errStr += fmt.Sprintf(core.Lan("modules.man_machine.ip_range.error"), v["value"], v["sub_v"])
 					}
 
 					ip = append(ip, map[string]interface{}{
@@ -645,9 +645,9 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 						},
 					})
 					if v["match"] == "ip_section_r" {
-						flags = "不"
+						flags = core.Lan("modules.man_machine.not")
 					}
-					rule_log += fmt.Sprintf("【源ip-%s匹配ip区间-[%s-%s]】", flags, v["value"], v["sub_v"])
+					rule_log += fmt.Sprintf(core.Lan("modules.man_machine.ip_range_match.log"), flags, v["value"], v["sub_v"])
 
 				}
 
@@ -670,10 +670,10 @@ func (m *Manm) mergeRules(rules interface{}) (interface{}, bool, string, error) 
 	res = append(res, urldata...)
 	var err error
 	if errStr != "" {
-		err = fmt.Errorf("错误信息:\n%s", errStr)
+		err = fmt.Errorf(core.Lan("modules.man_machine.error_info"), errStr)
 	}
 	if log_sites == "" {
-		log_sites = "全部网站"
+		log_sites = core.Lan("modules.man_machine.all_sites")
 	} else {
 		rule_log = rule_log[18:]
 	}
@@ -755,7 +755,7 @@ func (m *Manm) backspaceManm() bool {
 
 	json_data, err := public.ReadFile(m.manm_path_backup)
 	if err != nil {
-		logging.Error("读备份文件失败：", err)
+		logging.Error(core.Lan("modules.man_machine.read_backup.fail"), err)
 		return false
 	}
 	file_data := make([]types.ManData, 0)
@@ -770,7 +770,7 @@ func (m *Manm) backspaceManm() bool {
 	}
 	_, err = public.WriteFile(m.manm_path, buf.String())
 	if err != nil {
-		logging.Error("回退人机验证配置失败", err)
+		logging.Error(core.Lan("modules.man_machine.rollback.fail"), err)
 		return false
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)

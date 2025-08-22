@@ -21,12 +21,12 @@ func (multi *Multi) RoleList(request *http.Request) core.Response {
 func (multi *Multi) UpdateRole(request *http.Request) core.Response {
 	roleItem := access.RoleItem{}
 	if err := core.GetParamsFromRequestToStruct(request, &roleItem); err != nil {
-		return core.Fail(fmt.Errorf("获取请求参数失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.multi.get_req_param.fail"), err))
 	}
 	if err := access.RbacManager.UpdateRole(roleItem); err != nil {
 		return core.Fail(err)
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.multi.op.success"))
 }
 
 func (multi *Multi) RemoveRole(request *http.Request) core.Response {
@@ -34,12 +34,12 @@ func (multi *Multi) RemoveRole(request *http.Request) core.Response {
 		RoleIds []int `json:"role_ids"`
 	}{}
 	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
-		return core.Fail(fmt.Errorf("获取请求参数失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.multi.get_req_param.fail"), err))
 	}
 	if err := access.RbacManager.RemoveRole(params.RoleIds...); err != nil {
 		return core.Fail(err)
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.multi.op.success"))
 }
 
 func (multi *Multi) UserList(request *http.Request) core.Response {
@@ -50,23 +50,23 @@ func (multi *Multi) UpdateUser(request *http.Request) core.Response {
 	userItem := access.UserItem{}
 
 	if err := core.GetParamsFromRequestToStruct(request, &userItem); err != nil {
-		return core.Fail(fmt.Errorf("获取请求参数失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.multi.get_req_param.fail"), err))
 	}
 	if err := access.RbacManager.UpdateUser(userItem); err != nil {
 		return core.Fail(err)
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.multi.op.success"))
 }
 
 func (multi *Multi) UpdateUserPassword(request *http.Request) core.Response {
 	userItem := access.UserSecretItem{}
 	if err := core.GetParamsFromRequestToStruct(request, &userItem); err != nil {
-		return core.Fail(fmt.Errorf("获取请求参数失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.multi.get_req_param.fail"), err))
 	}
 	if err := access.RbacManager.UpdatePassword(userItem); err != nil {
 		return core.Fail(err)
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.multi.op.success"))
 }
 
 func (multi *Multi) RemoveUser(request *http.Request) core.Response {
@@ -74,12 +74,12 @@ func (multi *Multi) RemoveUser(request *http.Request) core.Response {
 		Uids []int `json:"uids"`
 	}{}
 	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
-		return core.Fail(fmt.Errorf("获取请求参数失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.multi.get_req_param.fail"), err))
 	}
 	if err := access.RbacManager.RemoveUser(params.Uids...); err != nil {
 		return core.Fail(err)
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.multi.op.success"))
 }
 
 func (multi *Multi) NodeList(request *http.Request) core.Response {

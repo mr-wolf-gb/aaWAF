@@ -87,7 +87,7 @@ func (d *DownloadResponse) Write(bs []byte) (int, error) {
 
 func (d *DownloadResponse) WriteResponse(w http.ResponseWriter, statusCode int) (err error) {
 	if d.handler == nil {
-		return errors.New("处理函数未设置")
+		return errors.New(language.Locate("core.response.handler_not_set"))
 	}
 	w.Header().Set("Content-Description", "File Transfer")
 	w.Header().Set("Content-Type", "application/octet-stream")

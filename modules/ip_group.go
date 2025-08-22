@@ -36,20 +36,20 @@ func (ip *Inset) SetIpGroup(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["data"]; !ok {
-		return core.Fail("缺少参数data")
+		return core.Fail(core.Lan("modules.ip_group.data.missing"))
 	}
 	if _, ok := params["name"]; !ok {
-		return core.Fail("缺少参数name")
+		return core.Fail(core.Lan("modules.ip_group.name.missing"))
 	}
 	uid := public.GetUid(request)
 	name := params["name"].(string)
 	fileData, err := ip.rFile(ip.ipData)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.ip_group.read_file.fail"))
 	}
 	_, ok := fileData[name]
 	if ok {
-		return core.Fail("名称已存在")
+		return core.Fail(core.Lan("modules.ip_group.name.exists"))
 	}
 	fileData, err = ip.helpData(params["data"].([]interface{}), fileData, name)
 	if err != nil {
@@ -70,8 +70,8 @@ func (ip *Inset) SetIpGroup(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("添加IP组-【%s】成功", name), public.OPT_LOG_TYPE_SITE_IPGROUP, uid)
-	return core.Success(fmt.Sprintf("添加IP组-【%s】成功", name))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.ip_group.add.success"), name), public.OPT_LOG_TYPE_SITE_IPGROUP, uid)
+	return core.Success(fmt.Sprintf(core.Lan("modules.ip_group.add.success"), name))
 }
 
 func (ip *Inset) EditIpGroup(request *http.Request) core.Response {
@@ -80,16 +80,16 @@ func (ip *Inset) EditIpGroup(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["name"]; !ok {
-		return core.Fail("缺少参数name")
+		return core.Fail(core.Lan("modules.ip_group.name.missing"))
 	}
 	if _, ok := params["data"]; !ok {
-		return core.Fail("缺少参数data")
+		return core.Fail(core.Lan("modules.ip_group.data.missing"))
 	}
 	uid := public.GetUid(request)
 	name := params["name"].(string)
 	fileData, err := ip.rFile(ip.ipData)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.ip_group.read_file.fail"))
 	}
 	_, ok := fileData[name]
 	if ok {
@@ -114,8 +114,8 @@ func (ip *Inset) EditIpGroup(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("编辑IP组-【%s】成功", name), public.OPT_LOG_TYPE_SITE_IPGROUP, uid)
-	return core.Success(fmt.Sprintf("编辑IP组-【%s】成功", name))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.ip_group.edit.success"), name), public.OPT_LOG_TYPE_SITE_IPGROUP, uid)
+	return core.Success(fmt.Sprintf(core.Lan("modules.ip_group.edit.success"), name))
 }
 
 func (ip *Inset) DelIpGroup(request *http.Request) core.Response {
@@ -124,20 +124,20 @@ func (ip *Inset) DelIpGroup(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["name"]; !ok {
-		return core.Fail("缺少参数name")
+		return core.Fail(core.Lan("modules.ip_group.name.missing"))
 	}
 	uid := public.GetUid(request)
 	name := params["name"].(string)
 	fileData, err := ip.rFile(ip.ipData)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.ip_group.read_file.fail"))
 	}
 	ipWhite, _ := ip.readIpData(ip.ipWhite)
 	for _, values := range ipWhite {
 		switch values[0].(type) {
 		case string:
 			if values[0].(string) == name && values[6].(string) == "ip_group" {
-				return core.Fail("该IP组已被使用,请先删除IP白名单相关规则")
+				return core.Fail(core.Lan("modules.ip_group.used_in_whitelist"))
 			}
 		default:
 		}
@@ -147,14 +147,14 @@ func (ip *Inset) DelIpGroup(request *http.Request) core.Response {
 		switch values[0].(type) {
 		case string:
 			if values[0].(string) == name && values[6].(string) == "ip_group" {
-				return core.Fail("该IP组已被使用,请先删除IP黑名单相关规则")
+				return core.Fail(core.Lan("modules.ip_group.used_in_blacklist"))
 			}
 		default:
 		}
 	}
 	is_mem := ip.readMenData(name)
 	if is_mem {
-		return core.Fail("该IP组已被使用,请先删除人机验证相关规则")
+		return core.Fail(core.Lan("modules.ip_group.used_in_man_machine"))
 	}
 	_, ok := fileData[name]
 	if ok {
@@ -175,8 +175,8 @@ func (ip *Inset) DelIpGroup(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("删除IP组-【%s】成功", name), public.OPT_LOG_TYPE_SITE_IPGROUP, uid)
-	return core.Success(fmt.Sprintf("删除IP组-【%s】成功", name))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.ip_group.delete.success"), name), public.OPT_LOG_TYPE_SITE_IPGROUP, uid)
+	return core.Success(fmt.Sprintf(core.Lan("modules.ip_group.delete.success"), name))
 }
 
 func (ip *Inset) GetByNameIp(request *http.Request) core.Response {
@@ -187,15 +187,15 @@ func (ip *Inset) GetByNameIp(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.Name == "" {
-		return core.Fail("名称不能为空")
+		return core.Fail(core.Lan("modules.ip_group.name.empty"))
 	}
 	fileData, err := ip.rFile(ip.ipData)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.ip_group.read_file.fail"))
 	}
 	ips, ok := fileData[params.Name]
 	if !ok {
-		return core.Fail("不存在该IP组")
+		return core.Fail(core.Lan("modules.ip_group.not_found"))
 	}
 	ips_ := make([]string, 0)
 	for _, v := range ips {
@@ -234,11 +234,11 @@ func (ip *Inset) helpData(params []interface{}, fileData map[string][]types.Grou
 					return nil, ok
 				}
 				if l < 5 || l > 128 {
-					return nil, errors.New("IP格式不合法")
+					return nil, errors.New(core.Lan("modules.ip_group.ip_format.invalid"))
 				}
 			}
 			if !public.IsIpAddr(public.InterfaceToString(v)) && !public.IsIpNetwork(public.InterfaceToString(v)) && !public.IsIpv6(parts[0]) {
-				return nil, errors.New("IP格式不正确")
+				return nil, errors.New(core.Lan("modules.ip_group.ip_format.incorrect"))
 			}
 			if public.IsIpv6(public.InterfaceToString(v)) {
 				fileData[name] = append(fileData[name], types.Group{
@@ -333,7 +333,7 @@ func (ip *Inset) readMenData(name string) bool {
 	if err != nil {
 		return false
 	}
-	key := fmt.Sprintf("匹配ip组-[%s]", name)
+	key := fmt.Sprintf(core.Lan("modules.ip_group.match_ip_group"), name)
 	for _, v := range data_ {
 		if strings.Contains(v.RuleLog, key) {
 			return true

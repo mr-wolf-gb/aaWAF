@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"CloudWaf/core/language"
 	"CloudWaf/public"
 	clusterCommon "CloudWaf/public/cluster_core/common"
 	"CloudWaf/public/db"
@@ -225,16 +226,16 @@ func setAuthPath(params ...string) {
 		return
 	}
 	if len(params) < 1 {
-		fmt.Println("安全入口最小八位")
+		fmt.Println(language.Locate("cli.a_path.least_8_chars"))
 		return
 	}
 	adminPath := params[0]
 	if len(adminPath) < 8 {
-		fmt.Println("安全入口最小八位")
+		fmt.Println(language.Locate("cli.a_path.least_8_chars"))
 		return
 	}
 	if !validate.IsAdminPath(adminPath) {
-		fmt.Println("安全入口格式不正确")
+		fmt.Println(language.Locate("cli.a_path.incorrect_format"))
 		return
 	}
 	data["admin_path"] = "/" + adminPath
@@ -272,7 +273,7 @@ func disableAcceptIp(params ...string) {
 	if err != nil {
 		return
 	}
-	fmt.Printf("关闭授权IP成功！")
+	fmt.Printf(language.Locate("cli.a_ip.close_success"))
 }
 
 func disableAcceptDomain(params ...string) {
@@ -286,7 +287,7 @@ func disableAcceptDomain(params ...string) {
 		return
 	}
 
-	fmt.Printf("关闭授权域名成功！")
+	fmt.Printf(language.Locate("cli.a_domain.close_success"))
 }
 
 func disableTwoAuth(params ...string) {
@@ -300,7 +301,7 @@ func disableTwoAuth(params ...string) {
 		return
 	}
 
-	fmt.Printf("关闭动态口令成功！")
+	fmt.Printf(language.Locate("cli.2fa.close_success"))
 }
 
 func addIpList(params ...string) {
@@ -320,7 +321,7 @@ func addIpList(params ...string) {
 		var log_flag string
 
 		if startIP == "" {
-			fmt.Println("起始IP不能为空")
+			fmt.Println(language.Locate("cli.ip.start_ip.empty"))
 			return
 		}
 
@@ -330,7 +331,7 @@ func addIpList(params ...string) {
 		TwoIP := uint32(0)
 		if ip_type == "0" {
 			if !public.IsIpv4(params[2]) {
-				fmt.Println("IP格式不合法")
+				fmt.Println(language.Locate("cli.ip.incorrect_format"))
 				return
 			}
 
@@ -338,11 +339,11 @@ func addIpList(params ...string) {
 
 			if len(endIP) > 0 {
 				if !public.IsIpv4(endIP) {
-					fmt.Println("IP格式不合法")
+					fmt.Println(language.Locate("cli.ip.incorrect_format"))
 					return
 				}
 				if public.IpToLong(startIP) > public.IpToLong(endIP) {
-					fmt.Println("起始IP不能大于结束IP")
+					fmt.Println(language.Locate("cli.ip.start_cannot_gt_end"))
 					return
 				}
 				TwoIP = public.IpToLong(endIP)
@@ -361,12 +362,12 @@ func addIpList(params ...string) {
 				}
 
 				if l < 5 || l > 128 {
-					fmt.Println("IP格式不合法")
+					fmt.Println(language.Locate("cli.ip.incorrect_format"))
 					return
 				}
 			} else {
 				if !public.IsIpv6(parts[0]) {
-					fmt.Println("IP格式不正确")
+					fmt.Println(language.Locate("cli.ip.incorrect_format.ip"))
 					return
 				}
 			}
@@ -383,33 +384,33 @@ func addIpList(params ...string) {
 		switch types {
 		case "0":
 			path = ipWhite
-			name = "IP白名单"
+			name = language.Locate("cli.ip.whitelist")
 			log_flag = "0"
 
 		case "1":
 			path = ipBlack
-			name = "IP黑名单"
+			name = language.Locate("cli.ip.blacklist")
 			log_flag = "1"
 
 		default:
-			fmt.Println("参数不合法!")
+			fmt.Println(language.Locate("cli.param.invalid"))
 			return
 		}
 		fileData, err := rIPFile(path)
 		if err != nil {
-			fmt.Println("读取文件失败!")
+			fmt.Println(language.Locate("cli.file.read.fail"))
 			return
 		}
 		for _, values := range fileData {
 			if ip_type == "0" && public.InterfaceToString(values[6]) == "v4" {
 				if uint32(values[0].(float64)) == OneIP && uint32(values[1].(float64)) == TwoIP {
-					fmt.Println("IP已添加")
+					fmt.Println(language.Locate("cli.ip.added"))
 					return
 				}
 			}
 			if ip_type == "1" && public.InterfaceToString(values[6]) == "v6" {
 				if strings.Contains(values[0].(string), startIP) {
-					fmt.Println("IP已添加")
+					fmt.Println(language.Locate("cli.ip.added"))
 					return
 				}
 			}
@@ -447,7 +448,7 @@ func addIpList(params ...string) {
 		public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 		ipLog := f(params[2], endLog)
 		public.WriteOptLog(fmt.Sprintf("%s设置【%s】成功", name, ipLog), log_type[log_flag], 1)
-		fmt.Println("设置成功!")
+		fmt.Println(language.Locate("cli.set.success"))
 	}
 }
 
@@ -478,7 +479,7 @@ func f(ip1, ip2 string) string {
 
 func clearList(params ...string) {
 	if params == nil {
-		fmt.Println("参数不能为空")
+		fmt.Println(language.Locate("cli.param.empty"))
 		return
 	}
 
@@ -489,30 +490,30 @@ func clearList(params ...string) {
 	switch types {
 	case "0":
 		path = ipWhite
-		name = "IP白名单"
+		name = language.Locate("cli.ip.whitelist")
 		log_flag = "0"
 	case "1":
 		path = ipBlack
-		name = "IP黑名单"
+		name = language.Locate("cli.ip.blacklist")
 		log_flag = "1"
 	case "2":
 		path = uaWhite
-		name = "UA白名单"
+		name = language.Locate("cli.ua.whitelist")
 		log_flag = "2"
 	case "3":
 		path = uaBlack
-		name = "UA黑名单"
+		name = language.Locate("cli.ua.blacklist")
 		log_flag = "3"
 	case "4":
 		path = urlWhite
-		name = "URI白名单"
+		name = language.Locate("cli.uri.whitelist")
 		log_flag = "4"
 	case "5":
 		path = urlBlack
-		name = "URI黑名单"
+		name = language.Locate("cli.uri.blacklist")
 		log_flag = "5"
 	default:
-		fmt.Println("参数不合法!")
+		fmt.Println(language.Locate("cli.param.invalid"))
 	}
 
 	_, err := public.WriteFile(path, "[]")
@@ -520,13 +521,13 @@ func clearList(params ...string) {
 	}
 
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("清空%s成功", name), log_type[log_flag], 1)
-	fmt.Printf("清空%s成功\n", name)
+	public.WriteOptLog(fmt.Sprintf(language.Locate("cli.clear.success"), name), log_type[log_flag], 1)
+	fmt.Printf(language.Locate("cli.clear.success")+"\n", name)
 }
 
 func getIp(params ...string) {
 	if params == nil {
-		fmt.Println("参数不能为空")
+		fmt.Println(language.Locate("cli.param.empty"))
 		return
 	}
 
@@ -540,12 +541,12 @@ func getIp(params ...string) {
 		path = ipBlack
 
 	default:
-		fmt.Println("参数不合法!")
+		fmt.Println(language.Locate("cli.param.invalid"))
 	}
 
 	fileData, err := rIPFile(path)
 	if err != nil {
-		fmt.Println("读取文件失败!")
+		fmt.Println(language.Locate("cli.file.read.fail"))
 	}
 	var lines []interface{}
 
@@ -569,7 +570,7 @@ func getIp(params ...string) {
 
 func deleteIp(params ...string) {
 	if params == nil {
-		fmt.Println("参数不能为空")
+		fmt.Println(language.Locate("cli.param.empty"))
 		return
 	}
 
@@ -583,11 +584,11 @@ func deleteIp(params ...string) {
 	switch types {
 	case "0":
 		path = ipWhite
-		name = "IP白名单"
+		name = language.Locate("cli.ip.whitelist")
 		log_flag = "0"
 		fileData, err := rIPFile(path)
 		if err != nil {
-			fmt.Println("读取文件失败!")
+			fmt.Println(language.Locate("cli.file.read.fail"))
 		}
 		del_rules := make([][]interface{}, 0)
 
@@ -621,23 +622,23 @@ func deleteIp(params ...string) {
 
 		rules_js, err := json.Marshal(fileData)
 		if err != nil {
-			fmt.Println("转json失败：")
+			fmt.Println(language.Locate("cli.json.transform.fail"))
 		}
 		_, err = public.WriteFile(path, string(rules_js))
 		if err != nil {
-			fmt.Println("写入IP白名单配置失败")
+			fmt.Println(language.Locate("cli.ip.write_whitelist.fail"))
 		}
 		public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 		public.WriteOptLog(fmt.Sprintf("%s删除【%s】", name, rule_log_del), log_type[log_flag], 1)
-		fmt.Println("删除成功")
+		fmt.Println(language.Locate("cli.delete.success"))
 
 	case "1":
 		path = ipBlack
-		name = "IP黑名单"
+		name = language.Locate("cli.ip.blacklist")
 		log_flag = "1"
 		fileData, err := rIPFile(path)
 		if err != nil {
-			fmt.Println("读取文件失败!")
+			fmt.Println(language.Locate("cli.file.read.fail"))
 		}
 		del_rules := make([][]interface{}, 0)
 		for i := len(fileData) - 1; i >= 0; i-- {
@@ -671,15 +672,15 @@ func deleteIp(params ...string) {
 
 		rules_js, err := json.Marshal(fileData)
 		if err != nil {
-			fmt.Println("转json失败：")
+			fmt.Println(language.Locate("cli.json.transform.fail"))
 		}
 		_, err = public.WriteFile(path, string(rules_js))
 		if err != nil {
-			fmt.Println("写入IP黑名单配置失败")
+			fmt.Println(language.Locate("cli.ip.write_blacklist.fail"))
 		}
 		public.WriteOptLog(fmt.Sprintf("%s删除【%s】", name, rule_log_del), log_type[log_flag], 1)
 		public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-		fmt.Println("删除成功")
+		fmt.Println(language.Locate("cli.delete.success"))
 	}
 }
 

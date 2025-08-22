@@ -71,7 +71,7 @@ func (config *Config) GetConfig(request *http.Request) core.Response {
 		data["warning_open"] = true
 	}
 	if data["interceptPage"] == nil {
-		data["interceptPage"] = "抱歉您的请求似乎存在威胁或带有不合法参数，<br />已被管理员设置的拦截规则所阻断，请检查提交内容或联系网站管理员处理"
+		data["interceptPage"] = core.Lan("modules.config.intercept_page.default")
 	}
 
 	data["interceptPage"] = html.UnescapeString(data["interceptPage"].(string))
@@ -83,14 +83,14 @@ func (config *Config) GetConfig(request *http.Request) core.Response {
 			Find()
 
 		if err != nil {
-			logging.Info("获取用户信息失败：", err)
+			logging.Info(core.Lan("modules.config.get_user_info.fail"), err)
 		}
 		data["password_expire_time"] = public.InterfaceToInt(userInfo["pwd_update_time"]) + public.InterfaceToInt(data["password_expire"])*86400
 		return userInfo, nil
 	})
 
 	if response == nil {
-		return core.Fail("获取密码更新时间失败，未知错误")
+		return core.Fail(core.Lan("modules.config.get_pwd_update_time.fail"))
 	}
 	twoAuth, err := public.Rconfigfile(config.two_auth)
 	if err != nil {
@@ -139,7 +139,7 @@ func (config *Config) SetOpenApi(request *http.Request) core.Response {
 		limit_addr_arr := strings.Split(limit_addr, "\n")
 		apiinfo.LimitAddr = limit_addr_arr
 		public.SaveWAFApi(apiinfo)
-		return core.Success("设置成功")
+		return core.Success(core.Lan("modules.config.set.success"))
 	}
 	if t_type == 2 {
 		apiinfo, _ := public.GetWAFApi()
@@ -147,28 +147,28 @@ func (config *Config) SetOpenApi(request *http.Request) core.Response {
 			apiinfo.Token = public.RandomStr(32)
 			apiinfo.Open = true
 			public.SaveWAFApi(apiinfo)
-			return core.Success("设置成功")
+			return core.Success(core.Lan("modules.config.set.success"))
 		}
 		if apiinfo.Open == true {
 			apiinfo.Open = false
 			apiinfo.Token = ""
 			public.SaveWAFApi(apiinfo)
-			return core.Success("设置成功")
+			return core.Success(core.Lan("modules.config.set.success"))
 		} else {
 			apiinfo.Open = true
 			apiinfo.Token = public.RandomStr(32)
 			public.SaveWAFApi(apiinfo)
-			return core.Success("设置成功")
+			return core.Success(core.Lan("modules.config.set.success"))
 		}
 	}
 	if t_type == 1 {
 		apiinfo, _ := public.GetWAFApi()
 		apiinfo.Token = public.RandomStr(32)
 		public.SaveWAFApi(apiinfo)
-		return core.Success("设置成功")
+		return core.Success(core.Lan("modules.config.set.success"))
 	}
 
-	return core.Success("设置成功")
+	return core.Success(core.Lan("modules.config.set.success"))
 
 }
 
@@ -183,10 +183,10 @@ func (config *Config) SetCert(request *http.Request) core.Response {
 	}
 	uid := token.Uid()
 	if _, ok := params["certContent"]; !ok {
-		return core.Fail("请输入证书内容")
+		return core.Fail(core.Lan("modules.config.cert_content.empty"))
 	}
 	if _, ok := params["keyContent"]; !ok {
-		return core.Fail("请输入证书私钥")
+		return core.Fail(core.Lan("modules.config.cert_key.empty"))
 	}
 	public.WriteFile(config.cert_path, params["certContent"].(string))
 	public.WriteFile(config.key_path, params["keyContent"].(string))
@@ -194,8 +194,8 @@ func (config *Config) SetCert(request *http.Request) core.Response {
 		time.Sleep(10 * time.Millisecond)
 		_, err = public.ExecCommandCombined("bash", "-c", "cat /www/cloud_waf/console/data/.pid |xargs kill -9;nohup /www/cloud_waf/console/CloudWaf >> /www/cloud_waf/console/logs/error.log 2>&1 &")
 	}()
-	public.WriteOptLog(fmt.Sprintf("证书设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("证书设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.cert_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.cert_set.success"))
 }
 
 // 重新生成证书
@@ -230,7 +230,7 @@ func (config *Config) NewGenerateCertificate(request *http.Request) core.Respons
 		return core.Fail(err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return core.Fail("在线申请自签证书失败")
+		return core.Fail(core.Lan("modules.config.new_cert.fail"))
 	}
 	m := struct {
 		Status   bool   `json:"status"`
@@ -244,7 +244,7 @@ func (config *Config) NewGenerateCertificate(request *http.Request) core.Respons
 		return core.Fail(err)
 	}
 	if !m.Status {
-		return core.Fail("在线申请自签证书失败：" + m.Msg)
+		return core.Fail(core.Lan("modules.config.new_cert.fail.with_msg") + m.Msg)
 	}
 
 	if err := os.WriteFile(config.cert_path, []byte(m.Cert), fs.ModePerm); err != nil {
@@ -273,7 +273,7 @@ func (config *Config) NewGenerateCertificate(request *http.Request) core.Respons
 		_, err = public.ExecCommandCombined("bash", "-c", "cat /www/cloud_waf/console/data/.pid |xargs kill -9;nohup /www/cloud_waf/console/CloudWaf >> /www/cloud_waf/console/logs/error.log 2>&1 &")
 	}()
 
-	return core.Success("重新生成成功")
+	return core.Success(core.Lan("modules.config.new_cert.success"))
 }
 func (config *Config) GetCert(request *http.Request) core.Response {
 	cert_pem, err := public.ReadFile(config.cert_path)
@@ -305,11 +305,11 @@ func (config *Config) SetPort(request *http.Request) core.Response {
 	}
 
 	if _, ok := params["port"]; !ok {
-		return core.Fail("请输入端口")
+		return core.Fail(core.Lan("modules.config.port.empty"))
 	}
 	number := public.InterfaceToInt(params["port"])
 	if number < 1 || number > 65535 {
-		return core.Fail("端口范围为1-65535")
+		return core.Fail(core.Lan("modules.config.port_range.error"))
 	}
 	if err != nil {
 		return core.Fail(err)
@@ -330,19 +330,19 @@ func (config *Config) SetPort(request *http.Request) core.Response {
 			}
 		}
 	} else {
-		return core.Success("端口已被占用,请重新设置")
+		return core.Success(core.Lan("modules.config.port_occupied"))
 	}
 	_, err = public.WriteFile(config.port, strconv.Itoa(number))
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("端口设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.port_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		_, err = public.ExecCommandCombined("bash", "-c", "cat /www/cloud_waf/console/data/.pid |xargs kill -9;nohup /www/cloud_waf/console/CloudWaf >> /www/cloud_waf/console/logs/error.log 2>&1 &")
 	}()
 
-	return core.Success("端口设置成功")
+	return core.Success(core.Lan("modules.config.port_set.success"))
 }
 
 func (config *Config) SetIp(request *http.Request) core.Response {
@@ -366,7 +366,7 @@ func (config *Config) SetIp(request *http.Request) core.Response {
 			for _, ip := range strings.Split(accept_ip, ",") {
 				ip = strings.TrimSpace(ip)
 				if !public.IsIpAddr(ip) {
-					return core.Fail("IP格式不合法")
+					return core.Fail(core.Lan("modules.config.ip_format.invalid"))
 				}
 				if !config.stringInSlice(ip, acceptIp) {
 					acceptIp = append(acceptIp, ip)
@@ -382,8 +382,8 @@ func (config *Config) SetIp(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("授权IP设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("授权IP设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.auth_ip_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.auth_ip_set.success"))
 }
 
 func (config *Config) stringInSlice(str string, slice []string) bool {
@@ -416,7 +416,7 @@ func (config *Config) SetDomain(request *http.Request) core.Response {
 		domain := params["accept_domain"].(string)
 		if domain != "" {
 			if !validate.IsHost(params["accept_domain"].(string)) {
-				return core.Fail("域名格式不合法")
+				return core.Fail(core.Lan("modules.config.domain_format.invalid"))
 			} else {
 				data["accept_domain"] = params["accept_domain"]
 			}
@@ -428,8 +428,8 @@ func (config *Config) SetDomain(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("域名设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("绑定域名设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.domain_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.bind_domain_set.success"))
 }
 
 func (config *Config) Setntp(request *http.Request) core.Response {
@@ -455,7 +455,7 @@ func (config *Config) Setntp(request *http.Request) core.Response {
 		case 0:
 			data["ntptime"] = false
 		default:
-			return core.Fail("参数不合法!")
+			return core.Fail(core.Lan("modules.config.param.invalid"))
 		}
 	}
 	err = public.Wconfigfile(config.config_path, data)
@@ -463,12 +463,12 @@ func (config *Config) Setntp(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 
-	status_msg := "关闭"
+	status_msg := core.Lan("modules.config.close")
 	if status {
-		status_msg = "开启"
+		status_msg = core.Lan("modules.config.open")
 	}
 	public.WriteOptLog(fmt.Sprintf("%s时间同步设置", status_msg), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("时间同步设置成功")
+	return core.Success(core.Lan("modules.config.time_sync_set.success"))
 }
 
 func (config *Config) SetTimeout(request *http.Request) core.Response {
@@ -488,11 +488,11 @@ func (config *Config) SetTimeout(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["session_timeout"]; !ok {
-		return core.Fail("会话超时时间不能为空")
+		return core.Fail(core.Lan("modules.config.session_timeout.empty"))
 	}
 	timeout := params["session_timeout"]
 	if public.InterfaceToInt(timeout) < 0 {
-		return core.Fail("会话超时时间不合法!")
+		return core.Fail(core.Lan("modules.config.session_timeout.invalid"))
 	}
 	if timeout == nil || public.InterfaceToInt(timeout) == 0 {
 		data["session_timeout"] = 120
@@ -503,8 +503,8 @@ func (config *Config) SetTimeout(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("会话超时时间设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("会话超时时间设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.session_timeout_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.session_timeout_set.success"))
 }
 
 func (config *Config) SetBasicAuth(request *http.Request) core.Response {
@@ -529,25 +529,25 @@ func (config *Config) SetBasicAuth(request *http.Request) core.Response {
 			isopen = true
 			basicUser := strings.TrimSpace(params["basic_user"].(string))
 			if basicUser == "" {
-				return core.Fail("用户名不能为空")
+				return core.Fail(core.Lan("modules.config.username.empty"))
 			}
 			basicPwd := strings.TrimSpace(params["basic_pwd"].(string))
 			if basicPwd == "" {
-				return core.Fail("密码不能为空")
+				return core.Fail(core.Lan("modules.config.password.empty"))
 			}
 
 			data["basic_user"], err = public.StringMd5(basicUser)
 			if err != nil {
-				return core.Fail("用户名加密失败")
+				return core.Fail(core.Lan("modules.config.username_encrypt.fail"))
 			}
 			data["basic_pwd"], err = public.StringMd5(basicPwd)
 			if err != nil {
-				return core.Fail("密码加密失败")
+				return core.Fail(core.Lan("modules.config.password_encrypt.fail"))
 			}
 		case 0:
 			data["open"] = false
 		default:
-			return core.Fail("参数不合法!")
+			return core.Fail(core.Lan("modules.config.param.invalid"))
 		}
 	}
 	err = public.Wconfigfile(config.basic_auth, data)
@@ -555,13 +555,13 @@ func (config *Config) SetBasicAuth(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 
-	status_msg := "关闭"
+	status_msg := core.Lan("modules.config.close")
 	if isopen {
-		status_msg = "开启"
+		status_msg = core.Lan("modules.config.open")
 	}
 
 	public.WriteOptLog(fmt.Sprintf("%sBasicAuth设置", status_msg), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("BasicAuth设置成功")
+	return core.Success(core.Lan("modules.config.basic_auth_set.success"))
 }
 
 func (config *Config) SetTwoAuth(request *http.Request) core.Response {
@@ -625,7 +625,7 @@ func (config *Config) SetTwoAuth(request *http.Request) core.Response {
 		case 0:
 			data["open"] = false
 		default:
-			return core.Fail("参数不合法!")
+			return core.Fail(core.Lan("modules.config.param.invalid"))
 		}
 	}
 
@@ -666,15 +666,15 @@ func (config *Config) SetTwoAuth(request *http.Request) core.Response {
 			data["qrcode_url"] = potp.URL()
 		}
 	} else {
-		return core.Fail("参数不合法!")
+		return core.Fail(core.Lan("modules.config.param.invalid"))
 	}
 	err = public.Wconfigfile(config.two_auth, data)
 	if err != nil {
 		return core.Fail(err)
 	}
-	status_msg := "关闭"
+	status_msg := core.Lan("modules.config.close")
 	if isopen {
-		status_msg = "开启"
+		status_msg = core.Lan("modules.config.open")
 	}
 	go func() {
 		time.Sleep(10 * time.Millisecond)
@@ -682,7 +682,7 @@ func (config *Config) SetTwoAuth(request *http.Request) core.Response {
 	}()
 
 	public.WriteOptLog(fmt.Sprintf("%s动态口令认证设置", status_msg), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("动态口令认证设置成功")
+	return core.Success(core.Lan("modules.config.2fa_set.success"))
 }
 
 func (config *Config) CheckTwoAuth(request *http.Request) core.Response {
@@ -713,12 +713,12 @@ func (config *Config) CheckTwoAuth(request *http.Request) core.Response {
 			return core.Fail(err)
 		}
 		if check == true {
-			return core.Success("认证成功")
+			return core.Success(core.Lan("modules.config.auth.success"))
 		} else {
-			return core.Fail("认证失败")
+			return core.Fail(core.Lan("modules.config.auth.fail"))
 		}
 	}
-	return core.Fail("动态口令认证未开启")
+	return core.Fail(core.Lan("modules.config.2fa_not_open"))
 }
 
 func (config *Config) GetTwoAuth(request *http.Request) core.Response {
@@ -752,20 +752,20 @@ func (config *Config) SetPwd(request *http.Request) core.Response {
 		case 0:
 			data["password_complexity"] = false
 		default:
-			return core.Fail("参数不合法!")
+			return core.Fail(core.Lan("modules.config.param.invalid"))
 		}
 	}
 	err = public.Wconfigfile(config.config_path, data)
 	if err != nil {
 		return core.Fail(err)
 	}
-	status_msg := "关闭"
+	status_msg := core.Lan("modules.config.close")
 	if pwd_complexity {
-		status_msg = "开启"
+		status_msg = core.Lan("modules.config.open")
 	}
 
 	public.WriteOptLog(fmt.Sprintf("%s密码复杂度验证", status_msg), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("密码复杂度验证设置成功")
+	return core.Success(core.Lan("modules.config.pwd_complexity_set.success"))
 }
 
 func (config *Config) SetPwdExpire(request *http.Request) core.Response {
@@ -784,10 +784,10 @@ func (config *Config) SetPwdExpire(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["password_expire"]; !ok {
-		return core.Fail("缺少参数password_expire!")
+		return core.Fail(core.Lan("modules.config.pwd_expire.missing"))
 	}
 	if public.InterfaceToInt(params["password_expire"]) < 0 {
-		return core.Fail("密码过期时间不合法!")
+		return core.Fail(core.Lan("modules.config.pwd_expire.invalid"))
 	}
 
 	data["password_expire"] = public.InterfaceToInt(params["password_expire"])
@@ -795,8 +795,8 @@ func (config *Config) SetPwdExpire(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("密码过期时间设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("密码过期时间设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.pwd_expire_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.pwd_expire_set.success"))
 }
 
 func (config *Config) SetAdminPath(request *http.Request) core.Response {
@@ -818,10 +818,10 @@ func (config *Config) SetAdminPath(request *http.Request) core.Response {
 	if _, ok := params["admin_path"]; ok {
 		adminPath := params["admin_path"].(string)
 		if len(adminPath) < 8 {
-			return core.Fail("安全入口最小八位")
+			return core.Fail(core.Lan("modules.config.auth_path.least_8_chars"))
 		}
 		if !validate.IsAdminPath(adminPath) {
-			return core.Fail("安全入口格式不正确!")
+			return core.Fail(core.Lan("modules.config.auth_path.incorrect_format"))
 		}
 		data["admin_path"] = "/" + adminPath
 	} else {
@@ -831,30 +831,30 @@ func (config *Config) SetAdminPath(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("安全入口设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("安全入口设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.auth_path_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.auth_path_set.success"))
 }
 
 func (config *Config) SyncDate(request *http.Request) core.Response {
 	uid := public.GetUid(request)
 	resp, err := public.HttpGet("https://www.bt.cn/api/index/get_time", 6)
 	if err != nil {
-		return core.Fail("连接时间服务器失败!")
+		return core.Fail(core.Lan("modules.config.conn_time_server.fail"))
 	}
 	body, err := strconv.Atoi(resp)
 	if err != nil {
-		return core.Fail("连接时间服务器失败!")
+		return core.Fail(core.Lan("modules.config.conn_time_server.fail"))
 	}
 	timeStr := strings.TrimSpace(strconv.Itoa(body))
 	newTime, err := strconv.ParseInt(timeStr, 10, 64)
 	if err != nil {
-		return core.Fail("连接时间服务器失败!")
+		return core.Fail(core.Lan("modules.config.conn_time_server.fail"))
 	}
 
 	newTime -= 28800
 	addTime, err := exec.Command("date", `+%z`).Output()
 	if err != nil {
-		return core.Fail("获取当前时区失败!!")
+		return core.Fail(core.Lan("modules.config.get_current_timezone.fail"))
 	}
 	addTimeStr := strings.TrimSpace(string(addTime))
 	add1 := false
@@ -863,7 +863,7 @@ func (config *Config) SyncDate(request *http.Request) core.Response {
 	}
 	addV, err := strconv.Atoi(addTimeStr[1 : len(addTimeStr)-2])
 	if err != nil {
-		return core.Fail("解析时区偏差失败!")
+		return core.Fail(core.Lan("modules.config.parse_timezone_offset.fail"))
 	}
 	num, _ := strconv.Atoi(addTimeStr[len(addTimeStr)-2:])
 
@@ -878,10 +878,10 @@ func (config *Config) SyncDate(request *http.Request) core.Response {
 	cmd := exec.Command("date", "-s", dateStr)
 	err = cmd.Run()
 	if err != nil {
-		return core.Fail("设置服务器时间失败!")
+		return core.Fail(core.Lan("modules.config.set_server_time.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("同步服务器时间成功!"), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("同步服务器时间成功!")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.sync_server_time.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.sync_server_time.success"))
 }
 
 func (config *Config) SetHelp(request *http.Request) core.Response {
@@ -908,7 +908,7 @@ func (config *Config) SetHelp(request *http.Request) core.Response {
 		case 0:
 			data["worker"] = false
 		default:
-			return core.Fail("参数不合法!")
+			return core.Fail(core.Lan("modules.config.param.invalid"))
 		}
 	}
 	err = public.Wconfigfile(config.config_path, data)
@@ -916,13 +916,13 @@ func (config *Config) SetHelp(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 
-	status_msg := "关闭"
+	status_msg := core.Lan("modules.config.close")
 	if status {
-		status_msg = "开启"
+		status_msg = core.Lan("modules.config.open")
 	}
 
 	public.WriteOptLog(fmt.Sprintf("%s在线客服设置成功", status_msg), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("在线客服设置成功")
+	return core.Success(core.Lan("modules.config.online_service_set.success"))
 }
 
 func (config *Config) SetTitle(request *http.Request) core.Response {
@@ -936,11 +936,11 @@ func (config *Config) SetTitle(request *http.Request) core.Response {
 	}
 	uid := token.Uid()
 	if _, ok := params["title"]; !ok {
-		return core.Fail("缺少参数title!")
+		return core.Fail(core.Lan("modules.config.title.missing"))
 	}
 
 	if _, ok := params["logo"]; !ok {
-		return core.Fail("缺少参数logo!")
+		return core.Fail(core.Lan("modules.config.logo.missing"))
 	}
 	data, err := public.Rconfigfile(config.config_path)
 	if err != nil {
@@ -964,7 +964,7 @@ func (config *Config) SetTitle(request *http.Request) core.Response {
 
 	logoData := []byte(public.InterfaceToString(params["logo"]))
 	if float64(len(logoData))*0.7 > 100*1024 {
-		return core.Success("logo文件大小不能超过100KB")
+		return core.Success(core.Lan("modules.config.logo_size.exceed"))
 	}
 	_, err = public.WriteFile(config.logoPath, params["logo"].(string))
 	if nil != err {
@@ -975,8 +975,8 @@ func (config *Config) SetTitle(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 
-	public.WriteOptLog(fmt.Sprintf("企业名【%s】设置成功", params["title"].(string)), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success("设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.corp_name_set.success"), params["title"].(string)), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(core.Lan("modules.config.set.success"))
 }
 
 func (config *Config) Title(request *http.Request) core.Response {
@@ -986,7 +986,7 @@ func (config *Config) Title(request *http.Request) core.Response {
 	}
 
 	if _, ok := data["title"]; !ok {
-		data["title"] = "堡塔云WAF"
+		data["title"] = core.Lan("modules.config.default_waf_title")
 	}
 	_, err = os.Stat(config.logoPath)
 	if err != nil {
@@ -1021,7 +1021,7 @@ func (config *Config) SetWarningOpen(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["warning_open"]; !ok {
-		return core.Fail("缺少参数warning_open!")
+		return core.Fail(core.Lan("modules.config.warning_open.missing"))
 	}
 
 	token, err := jwt.ParseTokenWithRequest(request)
@@ -1042,19 +1042,19 @@ func (config *Config) SetWarningOpen(request *http.Request) core.Response {
 		case 0:
 			data["warning_open"] = false
 		default:
-			return core.Fail("参数不合法!")
+			return core.Fail(core.Lan("modules.config.param.invalid"))
 		}
 	}
-	status_msg := "关闭"
+	status_msg := core.Lan("modules.config.close")
 	if warning_open {
-		status_msg = "开启"
+		status_msg = core.Lan("modules.config.open")
 	}
 	err = public.Wconfigfile(config.config_path, data)
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("告警%s成功", status_msg), public.OPT_LOG_TYPE_SYSTEM, uid)
-	return core.Success(fmt.Sprintf("全局告警已%s", status_msg))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.warning_set.success"), status_msg), public.OPT_LOG_TYPE_SYSTEM, uid)
+	return core.Success(fmt.Sprintf(core.Lan("modules.config.global_warning_set.success"), status_msg))
 
 }
 
@@ -1065,7 +1065,7 @@ func (config *Config) SetInterceptPage(request *http.Request) core.Response {
 	}
 
 	if _, ok := params["data"]; !ok {
-		return core.Fail("缺少参数data!")
+		return core.Fail(core.Lan("modules.config.data.missing"))
 	}
 	token, err := jwt.ParseTokenWithRequest(request)
 	if err != nil {
@@ -1075,7 +1075,7 @@ func (config *Config) SetInterceptPage(request *http.Request) core.Response {
 	au, _ := core.Auth()
 
 	if au.Auth.Extra.Type == 0 {
-		return core.Success("免费版不支持修改拦截页")
+		return core.Success(core.Lan("modules.config.free_version_no_intercept_page"))
 	}
 	content, err := public.ReadFile("/www/cloud_waf/nginx/conf.d/waf/html/black.html")
 
@@ -1100,9 +1100,9 @@ func (config *Config) SetInterceptPage(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	public.WriteFile("/www/cloud_waf/nginx/conf.d/waf/html/black.html", content)
-	public.WriteOptLog(fmt.Sprintf("拦截页说明设置成功"), public.OPT_LOG_TYPE_SYSTEM, uid)
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.config.intercept_page_set.success")), public.OPT_LOG_TYPE_SYSTEM, uid)
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=config", 2)
-	return core.Success("设置成功")
+	return core.Success(core.Lan("modules.config.set.success"))
 }
 
 func (config *Config) SetLanguage(request *http.Request) core.Response {
@@ -1114,10 +1114,10 @@ func (config *Config) SetLanguage(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.Lan == "" {
-		return core.Fail("语言类型不能为空")
+		return core.Fail(core.Lan("modules.config.lang_type.empty"))
 	}
 	if !public.InArray(params.Lan, language.VALID_LANGUAGE) {
-		return core.Fail("无效的语言类型 " + params.Lan)
+		return core.Fail(core.Lan("modules.config.lang_type.invalid") + params.Lan)
 	}
 	data, err := public.Rconfigfile(config.config_path)
 	if err != nil {
@@ -1128,7 +1128,7 @@ func (config *Config) SetLanguage(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.config.op.success"))
 }
 
 func (config *Config) SetSyslog(request *http.Request) core.Response {
@@ -1143,18 +1143,18 @@ func (config *Config) SetSyslog(request *http.Request) core.Response {
 	}
 
 	if params.Host == "" {
-		return core.Fail("Syslog服务器地址不能为空")
+		return core.Fail(core.Lan("modules.config.syslog_host.empty"))
 	}
 	if !validate.IsHost(params.Host) {
-		return core.Fail("Syslog服务器地址格式不合法")
+		return core.Fail(core.Lan("modules.config.syslog_host.invalid"))
 	}
 	if params.Port < 1 || params.Port > 65535 {
-		return core.Fail("Syslog服务器端口范围为1-65535")
+		return core.Fail(core.Lan("modules.config.syslog_port.invalid"))
 	}
 	err := public.SetSysLog(params.Open, params.Host, params.Port)
 	if err != nil {
 		return core.Fail(err)
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.config.op.success"))
 
 }

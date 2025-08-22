@@ -165,7 +165,7 @@ func CallModuleActionSimulate(module, action string, args any) (Response, error)
 	if v, ok := res.(Response); ok {
 		return v, nil
 	}
-	return nil, errors.New("API模块没有正确响应")
+	return nil, errors.New(language.Locate("core.tools.api_module_no_resp"))
 }
 
 func CallModuleActionSimulateAssertJson(module, action string, args any) (*JsonResponse, error) {
@@ -176,7 +176,7 @@ func CallModuleActionSimulateAssertJson(module, action string, args any) (*JsonR
 	if v, ok := resp.(*JsonResponse); ok {
 		return v, nil
 	}
-	return nil, errors.New("API模块没有正确响应JSON")
+	return nil, errors.New(language.Locate("core.tools.api_module_no_resp_json"))
 }
 
 func AfterModuleActionCall(module, action string, handler func()) {
@@ -230,7 +230,7 @@ func GetParamsFromRequest(request *http.Request) (map[string]interface{}, error)
 	if ct == "application/json" {
 		err = json.NewDecoder(request.Body).Decode(&result)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("解析请求参数JSON失败：%s", err))
+			return nil, errors.New(fmt.Sprintf(language.Locate("core.tools.parse_req_json.fail"), err))
 		}
 	}
 	FilterParamsSimple(result)
