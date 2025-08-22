@@ -23,25 +23,25 @@ func (n *Notification) List(request *http.Request) core.Response {
 	weixin := notification.DefaultWeiXinNotifier()
 	return core.Success([]interface{}{
 		map[string]interface{}{
-			"name":          "邮箱",
+			"name":          core.Lan("modules.notification.email"),
 			"type":          "email",
 			"is_configured": email.IsConfigured(),
 			"config":        email,
 		},
 		map[string]interface{}{
-			"name":          "钉钉",
+			"name":          core.Lan("modules.notification.dingding"),
 			"type":          "dingding",
 			"is_configured": dingding.IsConfigured(),
 			"config":        dingding,
 		},
 		map[string]interface{}{
-			"name":          "飞书",
+			"name":          core.Lan("modules.notification.feishu"),
 			"type":          "feishu",
 			"is_configured": feishu.IsConfigured(),
 			"config":        feishu,
 		},
 		map[string]interface{}{
-			"name":          "企业微信",
+			"name":          core.Lan("modules.notification.weixin"),
 			"type":          "weixin",
 			"is_configured": weixin.IsConfigured(),
 			"config":        weixin,
@@ -62,14 +62,14 @@ func (n *Notification) Update(request *http.Request) core.Response {
 	}
 
 	if notificationType == "" {
-		return core.Fail("缺少参数：告警通知类型")
+		return core.Fail(core.Lan("modules.notification.type.missing"))
 	}
 	if v, ok := params["config"]; ok {
 		config, _ = v.(map[string]interface{})
 	}
 
 	if len(config) == 0 {
-		return core.Fail("缺少参数：告警通知配置")
+		return core.Fail(core.Lan("modules.notification.config.missing"))
 	}
 	err = n.updateConfig(notificationType, config)
 
@@ -90,7 +90,7 @@ func (n *Notification) Clear(request *http.Request) core.Response {
 		notificationType = public.InterfaceToString(v)
 	}
 	if notificationType == "" {
-		return core.Fail("缺少参数：告警通知类型")
+		return core.Fail(core.Lan("modules.notification.type.missing"))
 	}
 	notifier, err := notification.Notifier(notificationType)
 
@@ -102,55 +102,55 @@ func (n *Notification) Clear(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.notification.op.success"))
 }
 
 func (n *Notification) updateConfig(notificationType string, config map[string]interface{}) (err error) {
 
-	msg := notification.Message{"堡塔云Waf测试消息", []string{
-		"您正在堡塔云Waf进行告警通知测试操作，如非您本人操作，请忽略此消息。",
-		"若您收到此消息，证明您的配置正确，且可以正常收发消息。",
+	msg := notification.Message{core.Lan("modules.notification.test.title"), []string{
+		core.Lan("modules.notification.test.msg1"),
+		core.Lan("modules.notification.test.msg2"),
 	}}
 
 	switch notificationType {
 	case "email":
 		if _, ok := config["email"]; !ok {
-			return errors.New("缺少配置：发件人邮箱")
+			return errors.New(core.Lan("modules.notification.email.email.missing"))
 		}
 
 		if _, ok := config["host"]; !ok {
-			return errors.New("缺少配置：SMTP服务器主机地址")
+			return errors.New(core.Lan("modules.notification.email.host.missing"))
 		}
 
 		if _, ok := config["port"]; !ok {
-			return errors.New("缺少配置：SMTP服务器端口号")
+			return errors.New(core.Lan("modules.notification.email.port.missing"))
 		}
 
 		if _, ok := config["password"]; !ok {
-			return errors.New("缺少配置：密码")
+			return errors.New(core.Lan("modules.notification.email.password.missing"))
 		}
 
 		if _, ok := config["receivers"]; !ok {
-			return errors.New("缺少配置：收件人邮箱列表")
+			return errors.New(core.Lan("modules.notification.email.receivers.missing"))
 		}
 		email := notification.DefaultEmailNotifier()
 		if v, ok := config["email"].(string); ok {
 			if !validate.IsEmail(v) {
-				return errors.New("发件人邮箱地址格式错误：" + v)
+				return errors.New(core.Lan("modules.notification.email.email.format.error") + v)
 			}
 
 			email.Email = v
 		}
 		if v, ok := config["host"].(string); ok {
 			if !validate.IsHost(v) {
-				return errors.New("SMTP服务器主机地址格式错误：" + v)
+				return errors.New(core.Lan("modules.notification.email.host.format.error") + v)
 			}
 
 			email.Host = v
 		}
 		if v, ok := config["port"].(string); ok {
 			if !validate.IsPort(v) {
-				return errors.New("SMTP服务器端口号格式错误：" + v)
+				return errors.New(core.Lan("modules.notification.email.port.format.error") + v)
 			}
 			email.Port = v
 		}
@@ -161,12 +161,12 @@ func (n *Notification) updateConfig(notificationType string, config map[string]i
 			receivers := public.InterfaceArray_To_StringArray(v)
 			for _, receiver := range receivers {
 				if !validate.IsEmail(receiver) {
-					return errors.New("收件人邮箱地址格式错误：" + receiver)
+					return errors.New(core.Lan("modules.notification.email.receiver.format.error") + receiver)
 				}
 			}
 
 			if len(receivers) == 0 {
-				return errors.New("收件人不能为空")
+				return errors.New(core.Lan("modules.notification.email.receiver.empty"))
 			}
 
 			email.Receivers = receivers
@@ -178,12 +178,12 @@ func (n *Notification) updateConfig(notificationType string, config map[string]i
 		return email.UpdateConfig()
 	case "dingding":
 		if _, ok := config["url"]; !ok {
-			return errors.New("缺少配置：钉钉机器人webhook推送地址")
+			return errors.New(core.Lan("modules.notification.dingding.url.missing"))
 		}
 		dingding := notification.DefaultDingDingNotifier()
 		if v, ok := config["url"].(string); ok {
 			if !validate.IsUrl(v) {
-				return errors.New("URL格式错误：" + v)
+				return errors.New(core.Lan("modules.notification.url.format.error") + v)
 			}
 
 			dingding.Url = v
@@ -196,12 +196,12 @@ func (n *Notification) updateConfig(notificationType string, config map[string]i
 		return dingding.UpdateConfig()
 	case "feishu":
 		if _, ok := config["url"]; !ok {
-			return errors.New("缺少配置：飞书机器人webhook推送地址")
+			return errors.New(core.Lan("modules.notification.feishu.url.missing"))
 		}
 		feishu := notification.DefaultFeiShuNotifier()
 		if v, ok := config["url"].(string); ok {
 			if !validate.IsUrl(v) {
-				return errors.New("URL格式错误：" + v)
+				return errors.New(core.Lan("modules.notification.url.format.error") + v)
 			}
 
 			feishu.Url = v
@@ -213,13 +213,13 @@ func (n *Notification) updateConfig(notificationType string, config map[string]i
 		return feishu.UpdateConfig()
 	case "weixin":
 		if _, ok := config["url"]; !ok {
-			return errors.New("缺少配置：企业微信机器人webhook推送地址")
+			return errors.New(core.Lan("modules.notification.weixin.url.missing"))
 		}
 
 		weixin := notification.DefaultWeiXinNotifier()
 		if v, ok := config["url"].(string); ok {
 			if !validate.IsUrl(v) {
-				return errors.New("URL格式错误：" + v)
+				return errors.New(core.Lan("modules.notification.url.format.error") + v)
 			}
 
 			weixin.Url = v
@@ -231,6 +231,6 @@ func (n *Notification) updateConfig(notificationType string, config map[string]i
 		}
 		return weixin.UpdateConfig()
 	default:
-		return errors.New("不支持的告警通知配置：" + notificationType)
+		return errors.New(core.Lan("modules.notification.unsupported") + notificationType)
 	}
 }

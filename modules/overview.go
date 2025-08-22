@@ -33,18 +33,18 @@ func (o *Overview) SetStatusMap(request *http.Request) core.Response {
 	}
 	open := params["open"]
 	if open == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.overview.param.error"))
 	}
 	open2 := public.InterfaceToInt(open)
 	if open2 == 1 {
 		public.WriteFile("/www/cloud_waf/console/data/3d.txt", "1")
-		return core.Success("开启成功")
+		return core.Success(core.Lan("modules.overview.open.success"))
 	}
 	if open2 == 0 {
 		public.WriteFile("/www/cloud_waf/console/data/3d.txt", "0")
-		return core.Success("关闭成功")
+		return core.Success(core.Lan("modules.overview.close.success"))
 	}
-	return core.Fail("参数错误")
+	return core.Fail(core.Lan("modules.overview.param.error"))
 }
 
 func (o *Overview) GetStatusMap(request *http.Request) core.Response {
@@ -91,7 +91,7 @@ func (o *Overview) GetMap(request *http.Request) core.Response {
 			if ip_country == "" {
 				continue
 			}
-			if ip_country == "内网地址" {
+			if ip_country == core.Lan("modules.overview.intranet.address") {
 				continue
 			}
 			if ip_longitude == "" || ip_latitude == "" {
@@ -182,7 +182,7 @@ func (o *Overview) AttackMap(request *http.Request) core.Response {
 		return result, err
 	})
 	if err != nil {
-		return core.Fail("获取攻击地图失败")
+		return core.Fail(core.Lan("modules.overview.attack_map.fail"))
 	}
 	if len(res.([]map[string]interface{})) == 0 {
 		res = []map[string]interface{}{}
@@ -215,7 +215,7 @@ func (o *Overview) MaliciousInfo(request *http.Request) core.Response {
 		return result, err
 	})
 	if err != nil {
-		return core.Fail("获取恶意访问详情失败")
+		return core.Fail(core.Lan("modules.overview.malicious_info.fail"))
 	}
 	if len(res.([]map[string]interface{})) == 0 {
 		res = []map[string]interface{}{}
@@ -267,7 +267,7 @@ func (o *Overview) Count(request *http.Request) core.Response {
 		}, nil
 	})
 	if err != nil {
-		return core.Fail("获取统计数据失败")
+		return core.Fail(core.Lan("modules.overview.count.fail"))
 	}
 	ress, err := public.HttpPostByToken(public.URL_HTTP_REQUEST+"/get_global_status", 15)
 
@@ -379,7 +379,7 @@ func (o *Overview) ErrorRequest(request *http.Request) core.Response {
 		return result_all, err
 	})
 	if err != nil {
-		return core.Fail("获取错误请求趋势失败")
+		return core.Fail(core.Lan("modules.overview.error_request.fail"))
 	}
 	if len(res.([]types.OverViewRequest)) == 0 {
 		res = []types.OverViewRequest{}
@@ -418,7 +418,7 @@ func (o *Overview) WebsiteFlow(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail("获取数据失败")
+		return core.Fail(core.Lan("modules.overview.data.fail"))
 	}
 	if len(res.([]map[string]interface{})) == 0 {
 		res = []map[string]interface{}{}
@@ -474,7 +474,7 @@ func (o *Overview) BackToSource(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail("获取数据失败")
+		return core.Fail(core.Lan("modules.overview.data.fail"))
 	}
 	if len(res.([]map[string]interface{})) == 0 {
 		res = []map[string]interface{}{}
@@ -528,9 +528,9 @@ func (o *Overview) NginxCount(request *http.Request) core.Response {
 func (o *Overview) Restart(request *http.Request) core.Response {
 	_, err := public.ExecCommandCombined("bash", "-c", "cat /www/cloud_waf/console/data/.pid |xargs kill -9;nohup /www/cloud_waf/console/CloudWaf >> /www/cloud_waf/console/logs/error.log 2>&1 &")
 	if err != nil {
-		return core.Fail("重启失败")
+		return core.Fail(core.Lan("modules.overview.restart.fail"))
 	}
-	return core.Success("重启成功")
+	return core.Success(core.Lan("modules.overview.restart.success"))
 }
 
 func (o *Overview) SlowRequest(request *http.Request) core.Response {
@@ -543,7 +543,7 @@ func (o *Overview) SlowRequest(request *http.Request) core.Response {
 		sites = public.InterfaceToString(v)
 	}
 	if sites == "" {
-		return core.Fail("缺少参数：sites")
+		return core.Fail(core.Lan("modules.overview.sites.missing"))
 	}
 	cacheKey := "OverView__SlowRequest_" + sites
 	if cache.Has(cacheKey) {
@@ -565,7 +565,7 @@ func (o *Overview) Infos(request *http.Request) core.Response {
 	if v, ok := params["start_time"].(string); ok {
 		new_time = public.InterfaceToString(v)
 		if !public.IsTime(new_time) {
-			return core.Fail("时间格式错误")
+			return core.Fail(core.Lan("modules.overview.time_format.error"))
 		}
 	}
 	cacheKey := "OverView__Infos" + new_time
@@ -743,7 +743,7 @@ func (o *Overview) Infos(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail("获取拦截详情+请求趋势失败")
+		return core.Fail(core.Lan("modules.overview.intercept_request_trend.fail"))
 	}
 
 	cache.Set(cacheKey, res, 2)
@@ -760,7 +760,7 @@ func (o *Overview) GetSpiderInfos(request *http.Request) core.Response {
 	if v, ok := params["start_time"].(string); ok {
 		new_time = public.InterfaceToString(v)
 		if !public.IsTime(new_time) {
-			return core.Fail("时间格式错误")
+			return core.Fail(core.Lan("modules.overview.time_format.error"))
 		}
 	} else {
 		new_time = time.Now().Format("2006-01-02")
@@ -932,7 +932,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 	}
 
 	if params["type"] == nil || params["request"] == nil || params["country"] == nil {
-		return core.Fail("参数错误 缺少type/request/country")
+		return core.Fail(core.Lan("modules.overview.map.param.missing"))
 	}
 	cacheKey := "OverView__Map_" + fmt.Sprintf("Request%v", params["request"]) + "_" + fmt.Sprintf("country%v", params["country"]) + "_" + fmt.Sprintf("type%v", params["type"]) + "_" + fmt.Sprintf("query_data%d", params["query_data"])
 
@@ -962,7 +962,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 				if params["country"].(float64) == 0 {
 					query.Group("country")
 				} else {
-					query.Where("country = ?", []interface{}{"中国"})
+					query.Where("country = ?", []interface{}{core.Lan("modules.overview.china")})
 					query.Group("province")
 				}
 				result, err := query.Select()
@@ -973,7 +973,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 			})
 
 			if err != nil {
-				return core.Fail("获取请求地图地区数据失败2")
+				return core.Fail(core.Lan("modules.overview.request_map_area.fail"))
 			}
 			top, err = public.MySqlWithClose(func(conn *db.MySql) (interface{}, error) {
 				query := conn.NewQuery()
@@ -1007,7 +1007,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 					Sort("visits", "desc").
 					Limit([]int64{0, 5000})
 				if params["country"].(float64) == 1 {
-					intercept_query.Where("country = ?", []interface{}{"中国"})
+					intercept_query.Where("country = ?", []interface{}{core.Lan("modules.overview.china")})
 				}
 				intercept_result, err := intercept_query.Select()
 				intercept_result = o.aggregateData(intercept_result)
@@ -1046,7 +1046,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 			})
 
 			if err != nil {
-				return core.Fail("获取请求ip数据失败")
+				return core.Fail(core.Lan("modules.overview.request_map_ip.fail"))
 			}
 			for _, v := range top.([]map[string]interface{}) {
 				if c, ok := v["ip"].(string); ok {
@@ -1072,7 +1072,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 				if params["country"].(float64) == 0 {
 					query.Group("country")
 				} else {
-					query.Where("country = ?", []interface{}{"中国"})
+					query.Where("country = ?", []interface{}{core.Lan("modules.overview.china")})
 					query.Group("province")
 				}
 				result, err := query.Select()
@@ -1092,7 +1092,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 			})
 
 			if err != nil {
-				return core.Fail("获取请求地图地区失败")
+				return core.Fail(core.Lan("modules.overview.request_map_area.fail"))
 			}
 
 		}
@@ -1115,7 +1115,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 					Sort("visits", "desc").
 					Limit([]int64{0, 5000})
 				if params["country"].(float64) == 1 {
-					query.Where("country = ?", []interface{}{"中国"})
+					query.Where("country = ?", []interface{}{core.Lan("modules.overview.china")})
 				}
 				result, err := query.Select()
 				result = o.aggregateData(result)
@@ -1129,7 +1129,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 			})
 
 			if err != nil {
-				return core.Fail("获取拦截地图ip失败")
+				return core.Fail(core.Lan("modules.overview.intercept_map_ip.fail"))
 			}
 		}
 
@@ -1146,7 +1146,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 				if params["country"].(float64) == 0 {
 					query.Group("country")
 				} else {
-					query.Where("country = ?", []interface{}{"中国"})
+					query.Where("country = ?", []interface{}{core.Lan("modules.overview.china")})
 					query.Group("province")
 				}
 				result, err := query.Select()
@@ -1167,7 +1167,7 @@ func (o *Overview) Map(request *http.Request) core.Response {
 			})
 
 			if err != nil {
-				return core.Fail("获取拦截地图地区失败")
+				return core.Fail(core.Lan("modules.overview.intercept_map_area.fail"))
 			}
 		}
 
@@ -1307,7 +1307,7 @@ func (o *Overview) SetIpAddress(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if paramss.IpLatitude == "" || paramss.IpLongitude == "" {
-		return core.Fail("请完整填写经纬度")
+		return core.Fail(core.Lan("modules.overview.lat_long.required"))
 	}
 	serverIp, _ := core.GetServerIp()
 
@@ -1320,7 +1320,7 @@ func (o *Overview) SetIpAddress(request *http.Request) core.Response {
 		}
 		err = public.Wconfigfile(o.ip_path, data)
 		if err != nil {
-			return core.Fail("设置失败")
+			return core.Fail(core.Lan("modules.overview.edit.fail"))
 		}
 
 	} else {
@@ -1329,7 +1329,7 @@ func (o *Overview) SetIpAddress(request *http.Request) core.Response {
 			IpInfo["ip_longitude"] = paramss.IpLongitude
 			err = public.Wconfigfile(o.ip_path, IpInfo)
 			if err != nil {
-				return core.Fail("设置失败")
+				return core.Fail(core.Lan("modules.overview.edit.fail"))
 			}
 		}
 
@@ -1343,7 +1343,7 @@ func (o *Overview) SetIpAddress(request *http.Request) core.Response {
 	cacheKey_address := "InterceptPage__IPAddress"
 	cache.Set(cacheKey_address, data, 60*60*24)
 
-	return core.Success("设置成功")
+	return core.Success(core.Lan("modules.overview.edit.success"))
 }
 
 func (o *Overview) clusterCountHelp() map[string]interface{} {
@@ -2696,7 +2696,7 @@ func (o *Overview) MapNewBranch(request *http.Request) core.Response {
 	}
 
 	if params["type"] == nil || params["site_id"] == nil || params["query_data"] == nil {
-		return core.Fail("参数错误 site_id/type/query_data")
+		return core.Fail(core.Lan("modules.overview.map_new_branch.param.missing"))
 	}
 	p := 1
 	p_size := 10000
@@ -2753,7 +2753,7 @@ func (o *Overview) MapNewBranch(request *http.Request) core.Response {
 		})
 
 		if err != nil {
-			return core.Fail("获取请求地图ip统计数据失败2")
+			return core.Fail(core.Lan("modules.overview.request_map_ip_stats.fail"))
 		}
 	}
 	if params["type"].(float64) == 1 {
@@ -2793,7 +2793,7 @@ func (o *Overview) MapNewBranch(request *http.Request) core.Response {
 		})
 
 		if err != nil {
-			return core.Fail("获取请求地图url统计失败")
+			return core.Fail(core.Lan("modules.overview.request_map_url_stats.fail"))
 		}
 
 	}
@@ -2847,7 +2847,7 @@ func (o *Overview) MapNewBranch(request *http.Request) core.Response {
 		})
 
 		if err != nil {
-			return core.Fail("获取拦截地图蜘蛛统计失败")
+			return core.Fail(core.Lan("modules.overview.intercept_map_spider_stats.fail"))
 		}
 
 	}
@@ -2864,7 +2864,7 @@ func (o *Overview) MapNewTotal(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params["site_id"] == nil || params["contrast_particle"] == nil || params["query_data"] == nil || params["contrast_start"] == nil || params["is_contrast"] == nil {
-		return core.Fail("参数错误 site_id/contrast_particle/query_data/contrast_start/is_contrast")
+		return core.Fail(core.Lan("modules.overview.map_new_total.param.missing"))
 	}
 	cacheKey := "OverView__MapNewTotal_" + fmt.Sprintf("SiteId%v", params["site_id"]) + "_" + fmt.Sprintf("ContrastParticle%v", params["contrast_particle"]) + "_" + fmt.Sprintf("queryData%d", params["query_data"]) + "_" + fmt.Sprintf("contrastStart%d", params["contrast_start"])
 	if cache.Has(cacheKey) {
@@ -2913,7 +2913,7 @@ func (o *Overview) MapNewTotal(request *http.Request) core.Response {
 		}
 		_, err = public.M("request_total").Where("date>=? and ip_count =?", []any{date_start, 0}).Update(map[string]interface{}{"ip_count": 1})
 		if err != nil {
-			logging.Error("修复异常数据失败：", err)
+			logging.Error(core.Lan("modules.overview.fix_data.fail"), err)
 		}
 		lastData := make(map[string]map[string]interface{}, 0)
 		total := map[string]interface{}{"request_total": 0, "ip_total": 0, "pv_total": 0, "uv_total": 0, "spider_total": 0}
@@ -3042,7 +3042,7 @@ func (o *Overview) MapNewTotal(request *http.Request) core.Response {
 		})
 
 		if err != nil {
-			return core.Fail("获取请求地图ip统计数据失败2")
+			return core.Fail(core.Lan("modules.overview.request_map_ip_stats.fail"))
 		}
 	}
 	cache.Set(cacheKey, returnData, 60)
@@ -3055,32 +3055,32 @@ func (o *Overview) GetHelpConfig(request *http.Request) core.Response {
 	result["spider"] = map[string]interface{}{
 		"baidu": map[string]string{
 			"english": "baidu",
-			"chinese": "百度",
+			"chinese": core.Lan("modules.overview.spider.baidu"),
 			"keyword": "baidu",
 		},
 		"google": map[string]string{
 			"english": "google",
-			"chinese": "谷歌",
+			"chinese": core.Lan("modules.overview.spider.google"),
 			"keyword": "googlebot",
 		},
 		"bing": map[string]string{
 			"english": "bing",
-			"chinese": "必应",
+			"chinese": core.Lan("modules.overview.spider.bing"),
 			"keyword": "bing",
 		},
 		"sogou": map[string]string{
 			"english": "sogou",
-			"chinese": "搜狗",
+			"chinese": core.Lan("modules.overview.spider.sogou"),
 			"keyword": "sogou",
 		},
 		"_360": map[string]string{
 			"english": "360",
-			"chinese": "360",
+			"chinese": core.Lan("modules.overview.spider.360"),
 			"keyword": "360",
 		},
 		"_other": map[string]string{
 			"english": "other",
-			"chinese": "其他",
+			"chinese": core.Lan("modules.overview.spider.other"),
 			"keyword": "other",
 		},
 	}
@@ -3094,7 +3094,7 @@ func (o *Overview) WafLargeScreenQps(request *http.Request) core.Response {
 	result["total"] = 0
 	result["malicious_total"] = 0
 	result["qps"] = 0
-	result["waf_large_screen_text"] = "宝塔云WAF大屏"
+	result["waf_large_screen_text"] = core.Lan("modules.overview.large_screen.title")
 
 	resultStus := struct {
 		Status bool `json:"status"`
@@ -3163,12 +3163,12 @@ func (o *Overview) WafLargeScreenMap(request *http.Request) core.Response {
 			tmp_address := ""
 			if address, ok := result[i]["country"].(string); ok {
 				tmp_address = address
-				if address == "中国" {
+				if address == core.Lan("modules.overview.china") {
 					if province, ok := result[i]["province"].(string); ok {
 						if len(province) > 0 {
 							tmp_address = province
 						} else {
-							tmp_address = "中国"
+							tmp_address = core.Lan("modules.overview.china")
 						}
 						if city, ok := result[i]["city"].(string); ok {
 							if len(city) > 0 {
@@ -3295,13 +3295,13 @@ func (o *Overview) UpdateLargeScreenText(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params["text"] == nil {
-		return core.Fail("缺少参数")
+		return core.Fail(core.Lan("modules.overview.param.missing"))
 	}
 	text := params["text"].(string)
 	path := "/www/cloud_waf/console/config/waf_large_screen_text.json"
 	ok, err := public.WriteFile(path, text)
 	if ok {
-		return core.Success("修改成功")
+		return core.Success(core.Lan("modules.overview.edit.success"))
 	}
-	return core.Fail("修改失败")
+	return core.Fail(core.Lan("modules.overview.edit.fail"))
 }

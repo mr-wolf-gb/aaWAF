@@ -68,12 +68,12 @@ func (c *Customize) Create(request *http.Request) core.Response {
 	}
 	if entry.Src == 3 {
 		if !public.IsUrl(entry.Action.Response.Body) {
-			return core.Fail("url不正确")
+			return core.Fail(core.Lan("modules.customize.url.incorrect"))
 		}
 	}
 	rawData, err := entry.ToEntryFromDatabase()
 	if err != nil {
-		return core.Fail(fmt.Errorf("新建规则失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.create_rule.fail"), err))
 	}
 	rawData.CreateTime = time.Now().Unix()
 	insertData := public.StructToMap(rawData)
@@ -109,12 +109,12 @@ func (c *Customize) Create(request *http.Request) core.Response {
 		return nil, nil
 	})
 	if err != nil {
-		return core.Fail(fmt.Errorf("新建规则失败：数据库写入失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.create_rule.db.fail"), err))
 	}
 	if err := c.syncConfigFile(); err != nil {
-		return core.Fail(fmt.Errorf("新建规则失败: 同步配置文件失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.create_rule.sync.fail"), err))
 	}
-	return core.Success("创建成功")
+	return core.Success(core.Lan("modules.customize.create.success"))
 }
 
 func (c *Customize) ParseExpression(request *http.Request) core.Response {
@@ -125,7 +125,7 @@ func (c *Customize) ParseExpression(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.Expr == "" {
-		return core.Fail("表达式不能为空")
+		return core.Fail(core.Lan("modules.customize.expr.empty"))
 	}
 	params.Expr = html.UnescapeString(params.Expr)
 	return core.Success(c.parseExpression(params.Expr))
@@ -137,14 +137,14 @@ func (c *Customize) Update(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if entry.Id == 0 {
-		return core.Fail("规则ID不能为空")
+		return core.Fail(core.Lan("modules.customize.rule_id.empty"))
 	}
 	if !public.S("customize_rules").Where("id = ?", []any{entry.Id}).Exists() {
-		return core.Fail("规则不存在")
+		return core.Fail(core.Lan("modules.customize.rule.not_found"))
 	}
 	if entry.Src == 3 {
 		if !public.IsUrl(entry.Action.Response.Body) {
-			return core.Fail("url不正确")
+			return core.Fail(core.Lan("modules.customize.url.incorrect"))
 		}
 	}
 	if err := entry.Validate(); err != nil {
@@ -152,7 +152,7 @@ func (c *Customize) Update(request *http.Request) core.Response {
 	}
 	rawData, err := entry.ToEntryFromDatabase()
 	if err != nil {
-		return core.Fail(fmt.Errorf("编辑规则失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.edit_rule.fail"), err))
 	}
 	_, err = public.SqliteWithClose(func(conn *db.Sqlite) (res any, err error) {
 		conn.Begin()
@@ -201,17 +201,17 @@ func (c *Customize) Update(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail(fmt.Errorf("编辑规则失败：数据库更新失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.edit_rule.db.fail"), err))
 	}
 	if err := c.syncConfigFile(); err != nil {
-		return core.Fail(fmt.Errorf("编辑规则失败: 同步配置文件失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.edit_rule.sync.fail"), err))
 	}
 	if entry.Src == 2 {
 		idString := strconv.Itoa(entry.Id)
 		public.HttpPostByToken("http://127.0.0.251/reset_customize_cc?rule_id="+idString, 2)
 	}
 
-	return core.Success("编辑成功")
+	return core.Success(core.Lan("modules.customize.edit.success"))
 }
 
 func (c *Customize) Remove(request *http.Request) core.Response {
@@ -222,10 +222,10 @@ func (c *Customize) Remove(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if len(params.Ids) == 0 {
-		return core.Fail("规则ID不能为空")
+		return core.Fail(core.Lan("modules.customize.rule_id.empty"))
 	}
 	if !public.S("customize_rules").WhereIn("id", params.Ids).Exists() {
-		return core.Fail("规则不存在")
+		return core.Fail(core.Lan("modules.customize.rule.not_found"))
 	}
 	_, err := public.SqliteWithClose(func(conn *db.Sqlite) (res any, err error) {
 		conn.Begin()
@@ -248,12 +248,12 @@ func (c *Customize) Remove(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail(fmt.Errorf("删除规则失败：从数据库删除数据失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.delete_rule.db.fail"), err))
 	}
 	if err := c.syncConfigFile(); err != nil {
-		return core.Fail(fmt.Errorf("删除规则失败: 同步配置文件失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.delete_rule.sync.fail"), err))
 	}
-	return core.Success("删除成功")
+	return core.Success(core.Lan("modules.customize.delete.success"))
 }
 
 func (c *Customize) List(request *http.Request) core.Response {
@@ -283,7 +283,7 @@ func (c *Customize) List(request *http.Request) core.Response {
 	res, err := public.SimplePage(query, params)
 
 	if err != nil {
-		return core.Fail(fmt.Errorf("获取列表失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.list.fail"), err))
 	}
 	m := struct {
 		Total int                       `json:"total"`
@@ -291,7 +291,7 @@ func (c *Customize) List(request *http.Request) core.Response {
 	}{}
 
 	if err = public.MapToStruct(res, &m); err != nil {
-		return core.Fail(fmt.Errorf("获取列表失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.list.fail"), err))
 	}
 	type entryForDisplay struct {
 		*types.Entry
@@ -301,14 +301,14 @@ func (c *Customize) List(request *http.Request) core.Response {
 	hitMap := make(map[string]int)
 	if bs, err := os.ReadFile(public.CUSTOMIZE_RULE_HIT_FILE); err == nil {
 		if err := json.Unmarshal(bs, &hitMap); err != nil {
-			return core.Fail(fmt.Errorf("获取列表失败：获取规则命中次数失败 %w", err))
+			return core.Fail(fmt.Errorf(core.Lan("modules.customize.list.get_hit.fail"), err))
 		}
 	}
 	for _, v := range m.List {
 		entry, err := v.ToEntry()
 
 		if err != nil {
-			return core.Fail(fmt.Errorf("获取列表失败：%w", err))
+			return core.Fail(fmt.Errorf(core.Lan("modules.customize.list.fail"), err))
 		}
 		lst = append(lst, entryForDisplay{
 			Entry: entry,
@@ -369,7 +369,7 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 	}
 	ipGroupEntry = append(ipGroupEntry, map[string]any{
 		"key":   "malicious_ip",
-		"label": "堡塔恶意IP库",
+		"label": core.Lan("modules.customize.bt_malicious_ip_lib"),
 	})
 
 	if params.Types == 2 {
@@ -377,37 +377,37 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 			"action": []map[string]any{
 				{
 					"type":         "deny",
-					"text":         "拦截",
+					"text":         core.Lan("modules.customize.intercept"),
 					"has_response": true,
 					"cc":           map[string]any{"interval": 60, "threshold": 120},
 					"block_time":   300,
 					"response": []map[string]any{
 						{
 							"type": "black_page",
-							"text": "默认拦截页",
+							"text": core.Lan("modules.customize.default_intercept_page"),
 						},
 						{
 							"type": "no_response",
-							"text": "444响应",
+							"text": core.Lan("modules.customize.resp_444"),
 						},
 					},
 				},
 				{
 					"type":         "validate",
-					"text":         "人机验证",
+					"text":         core.Lan("modules.customize.man_machine_ver"),
 					"has_response": true,
 					"response": []map[string]any{
 						{
 							"type": "validate_silence",
-							"text": "无感验证",
+							"text": core.Lan("modules.customize.no_sense_ver"),
 						},
 						{
 							"type": "validate_waiting",
-							"text": "5秒验证",
+							"text": core.Lan("modules.customize.wait_5s_ver"),
 						},
 						{
 							"type": "validate_slide",
-							"text": "滑动验证",
+							"text": core.Lan("modules.customize.slide_ver"),
 						},
 					},
 				},
@@ -415,7 +415,7 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 			"options": []map[string]any{
 				{
 					"type":                 "ip",
-					"text":                 "客户端IP",
+					"text":                 core.Lan("modules.customize.client_ip"),
 					"operators":            []string{"eq", "neq"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -423,13 +423,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入客户端IP",
-						"hint":        "示例：192.168.1.1",
+						"placeholder": core.Lan("modules.customize.client_ip.placeholder"),
+						"hint":        core.Lan("modules.customize.client_ip.hint"),
 					},
 				},
 				{
 					"type":                 "ip_group",
-					"text":                 "IP组",
+					"text":                 core.Lan("modules.customize.ip_group"),
 					"operators":            []string{"in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -437,13 +437,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "select",
 						"value":       ipGroupEntry,
-						"placeholder": "请选择IP组",
+						"placeholder": core.Lan("modules.customize.ip_group.placeholder"),
 						"hint":        "",
 					},
 				},
 				{
 					"type":                 "uri",
-					"text":                 "URI(不带参数)",
+					"text":                 core.Lan("modules.customize.uri_no_param"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp", "in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -451,13 +451,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入URI",
-						"hint":        "示例：/index.php",
+						"placeholder": core.Lan("modules.customize.uri.placeholder"),
+						"hint":        core.Lan("modules.customize.uri.hint"),
 					},
 				},
 				{
 					"type":                 "uri_with_param",
-					"text":                 "URI(带参数)",
+					"text":                 core.Lan("modules.customize.uri_with_param"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp", "in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -465,77 +465,77 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入URI",
-						"hint":        "示例：/index.php?username=xiaoming",
+						"placeholder": core.Lan("modules.customize.uri.placeholder"),
+						"hint":        core.Lan("modules.customize.uri_with_param.hint"),
 					},
 				},
 				{
 					"type":                 "param",
-					"text":                 "URI参数",
+					"text":                 core.Lan("modules.customize.uri_param"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"},
 					"left_factor_enabled":  true,
 					"right_factor_enabled": true,
 					"left_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入参数名称",
-						"hint":        "示例：username",
+						"placeholder": core.Lan("modules.customize.param_name.placeholder"),
+						"hint":        core.Lan("modules.customize.param_name.hint"),
 					},
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入参数值",
-						"hint":        "示例：id=1",
+						"placeholder": core.Lan("modules.customize.param_value.placeholder"),
+						"hint":        core.Lan("modules.customize.param_value.hint"),
 					},
 				},
 			},
 			"operators": map[string]map[string]any{
 				"regexp": {
-					"text":      "正则表达式",
+					"text":      core.Lan("modules.customize.regexp"),
 					"data_type": "string",
 				},
 				"prefix": {
-					"text":      "匹配开头",
+					"text":      core.Lan("modules.customize.match_start"),
 					"data_type": "string",
 				},
 				"suffix": {
-					"text":      "匹配结尾",
+					"text":      core.Lan("modules.customize.match_end"),
 					"data_type": "string",
 				},
 				"like": {
-					"text":      "模糊匹配",
+					"text":      core.Lan("modules.customize.like"),
 					"data_type": "string",
 				},
 				"eq": {
-					"text":      "等于/完全匹配",
+					"text":      core.Lan("modules.customize.eq"),
 					"data_type": "string",
 				},
 				"neq": {
-					"text":      "不等于",
+					"text":      core.Lan("modules.customize.neq"),
 					"data_type": "string",
 				},
 				"in": {
-					"text":      "包含以下各项",
+					"text":      core.Lan("modules.customize.in"),
 					"data_type": "set",
 				},
 				"not_in": {
-					"text":      "不包含以下各项",
+					"text":      core.Lan("modules.customize.not_in"),
 					"data_type": "set",
 				},
 				"gt": {
-					"text":      "大于",
+					"text":      core.Lan("modules.customize.gt"),
 					"data_type": "number",
 				},
 				"egt": {
-					"text":      "大于或等于",
+					"text":      core.Lan("modules.customize.egt"),
 					"data_type": "number",
 				},
 				"lt": {
-					"text":      "小于",
+					"text":      core.Lan("modules.customize.lt"),
 					"data_type": "number",
 				},
 				"elt": {
-					"text":      "小于或等于",
+					"text":      core.Lan("modules.customize.elt"),
 					"data_type": "number",
 				},
 			},
@@ -548,16 +548,16 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 			"action": []map[string]any{
 				{
 					"type":         "redirect",
-					"text":         "url重定向",
+					"text":         core.Lan("modules.customize.url_redirect"),
 					"has_response": true,
 					"response": []map[string]any{
 						{
 							"type": "301",
-							"text": "永久重定向",
+							"text": core.Lan("modules.customize.permanent_redirect"),
 						},
 						{
 							"type": "302",
-							"text": "临时重定向",
+							"text": core.Lan("modules.customize.temporary_redirect"),
 						},
 					},
 				},
@@ -565,7 +565,7 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 			"options": []map[string]any{
 				{
 					"type":                 "ip",
-					"text":                 "客户端IP",
+					"text":                 core.Lan("modules.customize.client_ip"),
 					"operators":            []string{"eq", "neq"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -573,13 +573,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入客户端IP",
-						"hint":        "示例：192.168.1.1",
+						"placeholder": core.Lan("modules.customize.client_ip.placeholder"),
+						"hint":        core.Lan("modules.customize.client_ip.hint"),
 					},
 				},
 				{
 					"type":                 "ip_range",
-					"text":                 "IP段",
+					"text":                 core.Lan("modules.customize.ip_range"),
 					"operators":            []string{"in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -587,13 +587,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入CIDR表达式",
-						"hint":        "示例：192.168.1.0/24",
+						"placeholder": core.Lan("modules.customize.cidr.placeholder"),
+						"hint":        core.Lan("modules.customize.cidr.hint"),
 					},
 				},
 				{
 					"type":                 "ip_group",
-					"text":                 "IP组",
+					"text":                 core.Lan("modules.customize.ip_group"),
 					"operators":            []string{"in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -601,13 +601,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "select",
 						"value":       ipGroupEntry,
-						"placeholder": "请选择IP组",
+						"placeholder": core.Lan("modules.customize.ip_group.placeholder"),
 						"hint":        "",
 					},
 				},
 				{
 					"type":                 "method",
-					"text":                 "请求方式",
+					"text":                 core.Lan("modules.customize.req_method"),
 					"operators":            []string{"eq", "neq", "in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -652,13 +652,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 								"label": "CONNECT",
 							},
 						},
-						"placeholder": "请选择请求方式",
+						"placeholder": core.Lan("modules.customize.req_method.placeholder"),
 						"hint":        "",
 					},
 				},
 				{
 					"type":                 "uri",
-					"text":                 "URI(不带参数)",
+					"text":                 core.Lan("modules.customize.uri_no_param"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp", "in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -666,13 +666,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入URI",
-						"hint":        "示例：/index.php",
+						"placeholder": core.Lan("modules.customize.uri.placeholder"),
+						"hint":        core.Lan("modules.customize.uri.hint"),
 					},
 				},
 				{
 					"type":                 "uri_with_param",
-					"text":                 "URI(带参数)",
+					"text":                 core.Lan("modules.customize.uri_with_param"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp", "in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -680,13 +680,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入URI",
-						"hint":        "示例：/index.php?username=xiaoming",
+						"placeholder": core.Lan("modules.customize.uri.placeholder"),
+						"hint":        core.Lan("modules.customize.uri_with_param.hint"),
 					},
 				},
 				{
 					"type":                 "param_name",
-					"text":                 "URI参数名称",
+					"text":                 core.Lan("modules.customize.uri_param_name"),
 					"operators":            []string{"in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -694,51 +694,51 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入参数名称",
-						"hint":        "示例：username",
+						"placeholder": core.Lan("modules.customize.param_name.placeholder"),
+						"hint":        core.Lan("modules.customize.param_name.hint"),
 					},
 				},
 				{
 					"type":                 "param",
-					"text":                 "URI请求参数",
+					"text":                 core.Lan("modules.customize.uri_req_param"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"},
 					"left_factor_enabled":  true,
 					"right_factor_enabled": true,
 					"left_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入参数名称",
-						"hint":        "示例：username",
+						"placeholder": core.Lan("modules.customize.param_name.placeholder"),
+						"hint":        core.Lan("modules.customize.param_name.hint"),
 					},
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入参数值",
+						"placeholder": core.Lan("modules.customize.param_value.placeholder"),
 						"hint":        "示例：xiaoming",
 					},
 				},
 				{
 					"type":                 "post_param",
-					"text":                 "POST请求参数",
+					"text":                 core.Lan("modules.customize.post_req_param"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"}, // 可用的运算符
 					"left_factor_enabled":  true,                                                        // 是否启用左运算数
 					"right_factor_enabled": true,                                                        // 是否启用右运算数
 					"left_widget": map[string]any{
 						"type":        "text",    // 组件类型
 						"value":       "",        // 可选值
-						"placeholder": "请输入参数名称", // 默认占位文本
-						"hint":        "示例：username",
+						"placeholder": core.Lan("modules.customize.param_name.placeholder"), // 默认占位文本
+						"hint":        core.Lan("modules.customize.param_name.hint"),
 					}, // 组件1
 					"right_widget": map[string]any{
 						"type":        "text",   // 组件类型
 						"value":       "",       // 可选值
-						"placeholder": "请输入参数值", // 默认占位文本
+						"placeholder": core.Lan("modules.customize.param_value.placeholder"), // 默认占位文本
 						"hint":        "示例：xiaoming",
 					}, // 组件2
 				},
 				{
 					"type":                 "body_param",
-					"text":                 "Post Body内容匹配",
+					"text":                 core.Lan("modules.customize.post_body_match"),
 					"operators":            []string{"regexp", "eq", "neq", "prefix", "suffix", "like", "in", "not_in"}, // 可用的运算符
 					"left_factor_enabled":  false,                                                                       // 是否启用左运算数
 					"right_factor_enabled": true,                                                                        // 是否启用右运算数
@@ -746,27 +746,27 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",      // 组件类型
 						"value":       "",          // 可选值
-						"placeholder": "输入需要匹配的内容", // 默认占位文本
-						"hint":        "示例：username=ddd&aaa=ccc",
+						"placeholder": core.Lan("modules.customize.match_content.placeholder"), // 默认占位文本
+						"hint":        core.Lan("modules.customize.match_content.hint"),
 					}, // 组件
 				},
 				{
 					"type":                 "request_header",
-					"text":                 "请求头",
+					"text":                 core.Lan("modules.customize.req_header"),
 					"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"},
 					"left_factor_enabled":  true,
 					"right_factor_enabled": true,
 					"left_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入请求头名称",
-						"hint":        "示例：Host",
+						"placeholder": core.Lan("modules.customize.req_header_name.placeholder"),
+						"hint":        core.Lan("modules.customize.req_header_name.hint"),
 					},
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入匹配值",
-						"hint":        "示例：www.bt.cn",
+						"placeholder": core.Lan("modules.customize.match_value.placeholder"),
+						"hint":        core.Lan("modules.customize.match_value.hint"),
 					},
 				},
 				{
@@ -779,13 +779,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入匹配值",
-						"hint":        "示例：Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6)...",
+						"placeholder": core.Lan("modules.customize.match_value.placeholder"),
+						"hint":        core.Lan("modules.customize.user_agent.hint"),
 					},
 				},
 				{
 					"type":                 "referer",
-					"text":                 "引用方/referer",
+					"text":                 core.Lan("modules.customize.referer"),
 					"operators":            []string{"eq", "neq", "in", "not_in", "prefix", "suffix", "regexp"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -793,13 +793,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入匹配值",
-						"hint":        "示例：https://www.bt.cn/",
+						"placeholder": core.Lan("modules.customize.match_value.placeholder"),
+						"hint":        core.Lan("modules.customize.referer.hint"),
 					},
 				},
 				{
 					"type":                 "request_header_name",
-					"text":                 "请求头名称",
+					"text":                 core.Lan("modules.customize.req_header_name"),
 					"operators":            []string{"in", "not_in"},
 					"left_factor_enabled":  false,
 					"right_factor_enabled": true,
@@ -807,58 +807,58 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 					"right_widget": map[string]any{
 						"type":        "text",
 						"value":       "",
-						"placeholder": "请输入请求头名称",
-						"hint":        "示例：Host",
+						"placeholder": core.Lan("modules.customize.req_header_name.placeholder"),
+						"hint":        core.Lan("modules.customize.req_header_name.hint"),
 					},
 				},
 			},
 			"operators": map[string]map[string]any{
 				"regexp": {
-					"text":      "正则表达式",
+					"text":      core.Lan("modules.customize.regexp"),
 					"data_type": "string",
 				},
 				"prefix": {
-					"text":      "匹配开头",
+					"text":      core.Lan("modules.customize.match_start"),
 					"data_type": "string",
 				},
 				"suffix": {
-					"text":      "匹配结尾",
+					"text":      core.Lan("modules.customize.match_end"),
 					"data_type": "string",
 				},
 				"like": {
-					"text":      "模糊匹配",
+					"text":      core.Lan("modules.customize.like"),
 					"data_type": "string",
 				},
 				"eq": {
-					"text":      "等于/完全匹配",
+					"text":      core.Lan("modules.customize.eq"),
 					"data_type": "string",
 				},
 				"neq": {
-					"text":      "不等于",
+					"text":      core.Lan("modules.customize.neq"),
 					"data_type": "string",
 				},
 				"in": {
-					"text":      "包含以下各项",
+					"text":      core.Lan("modules.customize.in"),
 					"data_type": "set",
 				},
 				"not_in": {
-					"text":      "不包含以下各项",
+					"text":      core.Lan("modules.customize.not_in"),
 					"data_type": "set",
 				},
 				"gt": {
-					"text":      "大于",
+					"text":      core.Lan("modules.customize.gt"),
 					"data_type": "number",
 				},
 				"egt": {
-					"text":      "大于或等于",
+					"text":      core.Lan("modules.customize.egt"),
 					"data_type": "number",
 				},
 				"lt": {
-					"text":      "小于",
+					"text":      core.Lan("modules.customize.lt"),
 					"data_type": "number",
 				},
 				"elt": {
-					"text":      "小于或等于",
+					"text":      core.Lan("modules.customize.elt"),
 					"data_type": "number",
 				},
 			},
@@ -870,47 +870,47 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 		"action": []map[string]any{
 			{
 				"type":         "allow",
-				"text":         "放行",
+				"text":         core.Lan("modules.customize.allow"),
 				"has_response": false,
 				"response":     make([]map[string]any, 0),
 			},
 			{
 				"type":         "deny",
-				"text":         "拦截",
+				"text":         core.Lan("modules.customize.intercept"),
 				"has_response": true,
 				"response": []map[string]any{
 					{
 						"type": "black_page",
-						"text": "默认拦截页",
+						"text": core.Lan("modules.customize.default_intercept_page"),
 					},
 					{
 						"type": "no_response",
-						"text": "444响应",
+						"text": core.Lan("modules.customize.resp_444"),
 					},
 				},
 			},
 			{
 				"type":         "validate",
-				"text":         "人机验证",
+				"text":         core.Lan("modules.customize.man_machine_ver"),
 				"has_response": true,
 				"response": []map[string]any{
 					{
 						"type": "validate_silence",
-						"text": "无感验证",
+						"text": core.Lan("modules.customize.no_sense_ver"),
 					},
 					{
 						"type": "validate_waiting",
-						"text": "5秒验证",
+						"text": core.Lan("modules.customize.wait_5s_ver"),
 					},
 					{
 						"type": "validate_slide",
-						"text": "滑动验证",
+						"text": core.Lan("modules.customize.slide_ver"),
 					},
 				},
 			},
 			{
 				"type":         "record",
-				"text":         "仅记录",
+				"text":         core.Lan("modules.customize.record_only"),
 				"has_response": false,
 				"response":     make([]map[string]any, 0),
 			},
@@ -918,7 +918,7 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 		"options": []map[string]any{
 			{
 				"type":                 "ip",
-				"text":                 "客户端IP",
+				"text":                 core.Lan("modules.customize.client_ip"),
 				"operators":            []string{"eq", "neq"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -926,13 +926,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入客户端IP",
-					"hint":        "示例：192.168.1.1",
+					"placeholder": core.Lan("modules.customize.client_ip.placeholder"),
+					"hint":        core.Lan("modules.customize.client_ip.hint"),
 				},
 			},
 			{
 				"type":                 "ip_range",
-				"text":                 "IP段",
+				"text":                 core.Lan("modules.customize.ip_range"),
 				"operators":            []string{"in", "not_in"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -940,13 +940,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入CIDR表达式",
-					"hint":        "示例：192.168.1.0/24",
+					"placeholder": core.Lan("modules.customize.cidr.placeholder"),
+					"hint":        core.Lan("modules.customize.cidr.hint"),
 				},
 			},
 			{
 				"type":                 "ip_group",
-				"text":                 "IP组",
+				"text":                 core.Lan("modules.customize.ip_group"),
 				"operators":            []string{"in", "not_in"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -954,13 +954,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "select",
 					"value":       ipGroupEntry,
-					"placeholder": "请选择IP组",
+					"placeholder": core.Lan("modules.customize.ip_group.placeholder"),
 					"hint":        "",
 				},
 			},
 			{
 				"type":                 "method",
-				"text":                 "请求方式",
+				"text":                 core.Lan("modules.customize.req_method"),
 				"operators":            []string{"eq", "neq", "in", "not_in"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -1005,13 +1005,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 							"label": "CONNECT",
 						},
 					},
-					"placeholder": "请选择请求方式",
+					"placeholder": core.Lan("modules.customize.req_method.placeholder"),
 					"hint":        "",
 				},
 			},
 			{
 				"type":                 "uri",
-				"text":                 "URI(不带参数)",
+				"text":                 core.Lan("modules.customize.uri_no_param"),
 				"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp", "in", "not_in"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -1019,13 +1019,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入URI",
-					"hint":        "示例：/index.php",
+					"placeholder": core.Lan("modules.customize.uri.placeholder"),
+					"hint":        core.Lan("modules.customize.uri.hint"),
 				},
 			},
 			{
 				"type":                 "uri_with_param",
-				"text":                 "URI(带参数)",
+				"text":                 core.Lan("modules.customize.uri_with_param"),
 				"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp", "in", "not_in"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -1033,13 +1033,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入URI",
-					"hint":        "示例：/index.php?username=xiaoming",
+					"placeholder": core.Lan("modules.customize.uri.placeholder"),
+					"hint":        core.Lan("modules.customize.uri_with_param.hint"),
 				},
 			},
 			{
 				"type":                 "param_name",
-				"text":                 "URI参数名称",
+				"text":                 core.Lan("modules.customize.uri_param_name"),
 				"operators":            []string{"in", "not_in"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -1047,46 +1047,46 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入参数名称",
-					"hint":        "示例：username",
+					"placeholder": core.Lan("modules.customize.param_name.placeholder"),
+					"hint":        core.Lan("modules.customize.param_name.hint"),
 				},
 			},
 			{
 				"type":                 "param",
-				"text":                 "URI请求参数",
+				"text":                 core.Lan("modules.customize.uri_req_param"),
 				"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"},
 				"left_factor_enabled":  true,
 				"right_factor_enabled": true,
 				"left_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入参数名称",
-					"hint":        "示例：username",
+					"placeholder": core.Lan("modules.customize.param_name.placeholder"),
+					"hint":        core.Lan("modules.customize.param_name.hint"),
 				},
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入参数值",
+					"placeholder": core.Lan("modules.customize.param_value.placeholder"),
 					"hint":        "示例：xiaoming",
 				},
 			},
 			{
 				"type":                 "request_header",
-				"text":                 "请求头",
+				"text":                 core.Lan("modules.customize.req_header"),
 				"operators":            []string{"eq", "neq", "prefix", "suffix", "like", "regexp"},
 				"left_factor_enabled":  true,
 				"right_factor_enabled": true,
 				"left_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入请求头名称",
-					"hint":        "示例：Host",
+					"placeholder": core.Lan("modules.customize.req_header_name.placeholder"),
+					"hint":        core.Lan("modules.customize.req_header_name.hint"),
 				},
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入匹配值",
-					"hint":        "示例：www.bt.cn",
+					"placeholder": core.Lan("modules.customize.match_value.placeholder"),
+					"hint":        core.Lan("modules.customize.match_value.hint"),
 				},
 			},
 			{
@@ -1099,13 +1099,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入匹配值",
-					"hint":        "示例：Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6)...",
+					"placeholder": core.Lan("modules.customize.match_value.placeholder"),
+					"hint":        core.Lan("modules.customize.user_agent.hint"),
 				},
 			},
 			{
 				"type":                 "referer",
-				"text":                 "引用方/referer",
+				"text":                 core.Lan("modules.customize.referer"),
 				"operators":            []string{"eq", "neq", "in", "not_in", "prefix", "suffix", "regexp"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -1113,13 +1113,13 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入匹配值",
-					"hint":        "示例：https://www.bt.cn/",
+					"placeholder": core.Lan("modules.customize.match_value.placeholder"),
+					"hint":        core.Lan("modules.customize.referer.hint"),
 				},
 			},
 			{
 				"type":                 "request_header_name",
-				"text":                 "请求头名称",
+				"text":                 core.Lan("modules.customize.req_header_name"),
 				"operators":            []string{"in", "not_in"},
 				"left_factor_enabled":  false,
 				"right_factor_enabled": true,
@@ -1127,59 +1127,59 @@ func (c *Customize) getConfigHelpCN(request *http.Request) core.Response {
 				"right_widget": map[string]any{
 					"type":        "text",
 					"value":       "",
-					"placeholder": "请输入请求头名称",
-					"hint":        "示例：Host",
+					"placeholder": core.Lan("modules.customize.req_header_name.placeholder"),
+					"hint":        core.Lan("modules.customize.req_header_name.hint"),
 				},
 			},
 		},
 
 		"operators": map[string]map[string]any{
 			"regexp": {
-				"text":      "正则表达式",
+				"text":      core.Lan("modules.customize.regexp"),
 				"data_type": "string",
 			},
 			"prefix": {
-				"text":      "匹配开头",
+				"text":      core.Lan("modules.customize.match_start"),
 				"data_type": "string",
 			},
 			"suffix": {
-				"text":      "匹配结尾",
+				"text":      core.Lan("modules.customize.match_end"),
 				"data_type": "string",
 			},
 			"like": {
-				"text":      "模糊匹配",
+				"text":      core.Lan("modules.customize.like"),
 				"data_type": "string",
 			},
 			"eq": {
-				"text":      "等于/完全匹配",
+				"text":      core.Lan("modules.customize.eq"),
 				"data_type": "string",
 			},
 			"neq": {
-				"text":      "不等于",
+				"text":      core.Lan("modules.customize.neq"),
 				"data_type": "string",
 			},
 			"in": {
-				"text":      "包含以下各项",
+				"text":      core.Lan("modules.customize.in"),
 				"data_type": "set",
 			},
 			"not_in": {
-				"text":      "不包含以下各项",
+				"text":      core.Lan("modules.customize.not_in"),
 				"data_type": "set",
 			},
 			"gt": {
-				"text":      "大于",
+				"text":      core.Lan("modules.customize.gt"),
 				"data_type": "number",
 			},
 			"egt": {
-				"text":      "大于或等于",
+				"text":      core.Lan("modules.customize.egt"),
 				"data_type": "number",
 			},
 			"lt": {
-				"text":      "小于",
+				"text":      core.Lan("modules.customize.lt"),
 				"data_type": "number",
 			},
 			"elt": {
-				"text":      "小于或等于",
+				"text":      core.Lan("modules.customize.elt"),
 				"data_type": "number",
 			},
 		},
@@ -1738,35 +1738,35 @@ func (c *Customize) Export(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	return core.Download("自定义规则__"+time.Now().Format("2006-01-02")+".json", bs)
+	return core.Download(core.Lan("modules.customize.export_file_name")+time.Now().Format("2006-01-02")+".json", bs)
 }
 
 func (c *Customize) Import(request *http.Request) core.Response {
 	err := request.ParseMultipartForm(50 << 10)
 	if err != nil {
-		return core.Fail("导入规则失败：文件大小不合法")
+		return core.Fail(core.Lan("modules.customize.import.fail.size"))
 	}
 	f, fh, err := request.FormFile("customize_rule")
 	if err != nil {
-		return core.Fail("导入规则失败：文件读取失败 " + err.Error())
+		return core.Fail(core.Lan("modules.customize.import.fail.read") + err.Error())
 	}
 	defer f.Close()
 	if !strings.HasSuffix(fh.Filename, ".json") {
-		return core.Fail("导入规则失败：无效的规则文件 - 1")
+		return core.Fail(core.Lan("modules.customize.import.fail.invalid_1"))
 	}
 	bs, err := io.ReadAll(f)
 	if err != nil {
-		return core.Fail("导入规则失败：无效的规则文件 - 2")
+		return core.Fail(core.Lan("modules.customize.import.fail.invalid_2"))
 	}
 	if len(bs) == 0 {
-		return core.Fail("不能导入空文件")
+		return core.Fail(core.Lan("modules.customize.import.empty_file"))
 	}
 	data := make([]types.Entry, 0)
 	if err := json.Unmarshal(bs, &data); err != nil {
-		return core.Fail(fmt.Errorf("文件格式错误：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.import.format.error"), err))
 	}
 	if len(data) == 0 {
-		return core.Fail("不能导入空数据")
+		return core.Fail(core.Lan("modules.customize.import.empty_data"))
 	}
 	_, err = public.SqliteWithClose(func(conn *db.Sqlite) (res any, err error) {
 		conn.Begin()
@@ -1779,7 +1779,7 @@ func (c *Customize) Import(request *http.Request) core.Response {
 		}()
 		for _, entry := range data {
 			if entry.Id == 0 {
-				return nil, errors.New("无效的数据")
+				return nil, errors.New(core.Lan("modules.customize.import.invalid_data"))
 			}
 			rawData, err := entry.ToEntryFromDatabase()
 			if err != nil {
@@ -1809,12 +1809,12 @@ func (c *Customize) Import(request *http.Request) core.Response {
 		return nil, nil
 	})
 	if err != nil {
-		return core.Fail(fmt.Errorf("导入数据失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.import.db.fail"), err))
 	}
 	if err := c.syncConfigFile(); err != nil {
-		return core.Fail(fmt.Errorf("导入数据失败: 同步配置文件失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.import.sync.fail"), err))
 	}
-	return core.Success("导入成功")
+	return core.Success(core.Lan("modules.customize.import.success"))
 }
 
 func (c *Customize) ToExpression(request *http.Request) core.Response {
@@ -1825,10 +1825,10 @@ func (c *Customize) ToExpression(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.Id == 0 {
-		return core.Fail("规则ID不能为空")
+		return core.Fail(core.Lan("modules.customize.rule_id.empty"))
 	}
 	if !public.S("customize_rules").Where("id = ?", []any{params.Id}).Exists() {
-		return core.Fail("规则不存在")
+		return core.Fail(core.Lan("modules.customize.rule.not_found"))
 	}
 	rawData := types.EntryFromDatabase{}
 	err := public.S("customize_rules").
@@ -1836,11 +1836,11 @@ func (c *Customize) ToExpression(request *http.Request) core.Response {
 		Field([]string{"id", "is_global", "status", "priority", "create_time", "execute_phase", "name", "servers", "action", "root"}).
 		FindAs(&rawData)
 	if err != nil {
-		return core.Fail(fmt.Errorf("转换成表达式失败：从数据库中查询失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.to_expr.db.fail"), err))
 	}
 	entry, err := rawData.ToEntry()
 	if err != nil {
-		return core.Fail(fmt.Errorf("转换成表达式失败：转换规则失败 %w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.customize.to_expr.rule.fail"), err))
 	}
 	return core.Success(entry.ToExpression())
 }
@@ -1928,7 +1928,7 @@ func (c *Customize) CreateWithBlockLog(request *http.Request) core.Response {
 			})
 		}
 		entry := types.Entry{
-			Name:       "URL白名单--" + params.Uri,
+			Name:       core.Lan("modules.customize.url_whitelist_name") + params.Uri,
 			Servers:    []string{params.ServerName},
 			CreateTime: time.Now().Unix(),
 			Status:     1,
@@ -1990,9 +1990,9 @@ func (c *Customize) CreateWithBlockLog(request *http.Request) core.Response {
 		successList++
 	}
 	if successList > 0 {
-		return core.Success("成功将URL白名单加入自定义规则,成功" + strconv.Itoa(successList) + "条,失败" + strconv.Itoa(failList) + "条")
+		return core.Success(fmt.Sprintf(core.Lan("modules.customize.add_url_whitelist.success"), strconv.Itoa(successList), strconv.Itoa(failList)))
 	} else {
-		return core.Fail("成功将URL白名单加入自定义规则,成功" + strconv.Itoa(successList) + "条,失败" + strconv.Itoa(failList) + "条")
+		return core.Fail(fmt.Sprintf(core.Lan("modules.customize.add_url_whitelist.success"), strconv.Itoa(successList), strconv.Itoa(failList)))
 	}
 }
 
@@ -2154,18 +2154,18 @@ func (c *Customize) ExportExample(request *http.Request) core.Response {
 	}
 
 	optTrans := map[string]string{
-		"regexp": "正则表达式",
-		"prefix": "匹配开头",
-		"suffix": "匹配结尾",
-		"like":   "模糊匹配",
-		"eq":     "等于/完全匹配",
-		"neq":    "不等于",
-		"in":     "包含",
-		"not_in": "不包含",
-		"gt":     "大于",
-		"egt":    "大于或等于",
-		"lt":     "小于",
-		"elt":    "小于或等于",
+		"regexp": core.Lan("modules.customize.regexp"),
+		"prefix": core.Lan("modules.customize.match_start.prefix"),
+		"suffix": core.Lan("modules.customize.match_end.suffix"),
+		"like":   core.Lan("modules.customize.like.keyword"),
+		"eq":     core.Lan("modules.customize.eq.equal"),
+		"neq":    core.Lan("modules.customize.neq.not_equal"),
+		"in":     core.Lan("modules.customize.in.incloud"),
+		"not_in": core.Lan("modules.customize.not_in.not_incloud"),
+		"gt":     core.Lan("modules.customize.gt.greater_than"),
+		"egt":    core.Lan("modules.customize.egt.greater_than_or_equal"),
+		"lt":     core.Lan("modules.customize.lt.less_than"),
+		"elt":    core.Lan("modules.customize.elt.less_than_or_equal"),
 	}
 	params := struct {
 		Options []option `json:"options"`

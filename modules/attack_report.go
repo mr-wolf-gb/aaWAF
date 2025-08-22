@@ -70,7 +70,7 @@ func (r *Report) AttackReportCount(request *http.Request) core.Response {
 		}, err
 	})
 	if err != nil {
-		return core.Fail("获取攻击报表信息失败")
+		return core.Fail(core.Lan("modules.attack_report.get_report.fail"))
 	}
 	return core.Success(res)
 }
@@ -105,7 +105,7 @@ func (r *Report) AttackReportUri(request *http.Request) core.Response {
 		return uriMap, err
 	})
 	if err != nil {
-		return core.Fail("获取uri信息失败")
+		return core.Fail(core.Lan("modules.attack_report.get_uri_info.fail"))
 	}
 	return core.Success(res)
 }
@@ -174,15 +174,15 @@ func (r *Report) AttackReportLog(request *http.Request) core.Response {
 					filePath := r.lanjie + strconv.Itoa(year) + "_" + strconv.Itoa(int(month)) + "_" + strconv.Itoa(day) + rdm + ".csv"
 					err := r.exportDataToCSV1(data, filePath, header)
 					if err != nil {
-						return core.Fail("导出失败"), nil
+						return core.Fail(core.Lan("modules.attack_report.export.fail")), nil
 					}
-					rep, err := core.DownloadFile(filePath, "拦截日志.csv")
+					rep, err := core.DownloadFile(filePath, core.Lan("modules.attack_report.intercept_log.csv_name"))
 					if err != nil {
-						return core.Fail("导出失败"), nil
+						return core.Fail(core.Lan("modules.attack_report.export.fail")), nil
 					}
 					return rep, nil
 				} else {
-					return "无数据", nil
+					return core.Lan("modules.attack_report.no_data"), nil
 				}
 			}
 		}
@@ -201,14 +201,14 @@ func (r *Report) AttackReportLog(request *http.Request) core.Response {
 				}
 				_, errs := q2.Delete()
 				if errs != nil {
-					return core.Fail("清空失败"), nil
+					return core.Fail(core.Lan("modules.attack_report.clear.fail")), nil
 				}
 				if flag == false {
 					path := "/www/cloud_waf/nginx/conf.d/waf/logs/"
 					if public.FileExists(path) {
 						err := os.RemoveAll(path)
 						if err != nil {
-							logging.Error("清空post日志失败：", err)
+							logging.Error(core.Lan("modules.attack_report.clear_post_log.fail"), err)
 						}
 					}
 				} else {
@@ -223,8 +223,8 @@ func (r *Report) AttackReportLog(request *http.Request) core.Response {
 						}
 					}
 				}
-				public.WriteOptLog(fmt.Sprintf("拦截日志清空成功"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-				return "清空成功", nil
+				public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.intercept_log.clear.success")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+				return core.Lan("modules.attack_report.clear.success"), nil
 			}
 		}
 		resp, err := public.SimplePage(query, params)
@@ -241,14 +241,14 @@ func (r *Report) AttackReportLog(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail("获取拦截日志失败")
+		return core.Fail(core.Lan("modules.attack_report.get_intercept_log.fail"))
 	}
 	if v, ok := params["export"]; ok {
 		if c, ok := v.(float64); ok && c == 1 {
-			if res == "无数据" {
-				return core.Fail("无数据可导出")
+			if res == core.Lan("modules.attack_report.no_data") {
+				return core.Fail(core.Lan("modules.attack_report.no_data_to_export"))
 			}
-			public.WriteOptLog(fmt.Sprintf("拦截日志导出成功"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.intercept_log.export.success")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
 			return res.(core.Response)
 		}
 	}
@@ -323,16 +323,16 @@ func (r *Report) AttackReportIpLog(request *http.Request) core.Response {
 					filePath := r.fengsuo + strconv.Itoa(year) + "_" + strconv.Itoa(int(month)) + "_" + strconv.Itoa(day) + rdm + ".csv"
 					err := r.exportDataToCSV2(data, filePath, header)
 					if err != nil {
-						return core.Fail("导出失败"), nil
+						return core.Fail(core.Lan("modules.attack_report.export.fail")), nil
 					}
-					rep, err := core.DownloadFile(filePath, "封锁记录.csv")
+					rep, err := core.DownloadFile(filePath, core.Lan("modules.attack_report.block_log.csv_name"))
 					if err != nil {
-						return core.Fail("导出失败"), nil
+						return core.Fail(core.Lan("modules.attack_report.export.fail")), nil
 					}
 
 					return rep, nil
 				} else {
-					return "无数据", nil
+					return core.Lan("modules.attack_report.no_data"), nil
 				}
 
 			}
@@ -352,14 +352,14 @@ func (r *Report) AttackReportIpLog(request *http.Request) core.Response {
 				}
 				_, errs := q2.Delete()
 				if errs != nil {
-					return core.Fail("清空失败"), nil
+					return core.Fail(core.Lan("modules.attack_report.clear.fail")), nil
 				}
 				if flag == false {
 					path := "/www/cloud_waf/nginx/conf.d/waf/logs/"
 					if public.FileExists(path) {
 						err := os.RemoveAll(path)
 						if err != nil {
-							logging.Error("清空post日志失败：", err)
+							logging.Error(core.Lan("modules.attack_report.clear_post_log.fail"), err)
 						}
 					}
 				} else {
@@ -374,8 +374,8 @@ func (r *Report) AttackReportIpLog(request *http.Request) core.Response {
 						}
 					}
 				}
-				public.WriteOptLog(fmt.Sprintf("封锁日志清空成功"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-				return "清空成功", nil
+				public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.block_log.clear.success")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+				return core.Lan("modules.attack_report.clear.success"), nil
 			}
 		}
 		resp, err := public.SimplePage(query, params)
@@ -394,14 +394,14 @@ func (r *Report) AttackReportIpLog(request *http.Request) core.Response {
 	})
 
 	if err != nil {
-		return core.Fail("获取IP封锁记录失败")
+		return core.Fail(core.Lan("modules.attack_report.get_block_log.fail"))
 	}
 	if v, ok := params["export"]; ok {
 		if c, ok := v.(float64); ok && c == 1 {
-			if res == "无数据" {
-				return core.Fail("无数据可导出")
+			if res == core.Lan("modules.attack_report.no_data") {
+				return core.Fail(core.Lan("modules.attack_report.no_data_to_export"))
 			}
-			public.WriteOptLog(fmt.Sprintf("封锁日志导出成功"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.block_log.export.success")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
 			return res.(core.Response)
 		}
 	}
@@ -421,7 +421,7 @@ func (r *Report) AttackReportIpLogInfo(request *http.Request) core.Response {
 		return query.Find()
 	})
 	if err != nil {
-		return core.Fail("获取封锁记录失败")
+		return core.Fail(core.Lan("modules.attack_report.get_block_record.fail"))
 	}
 	return core.Success(res)
 }
@@ -439,7 +439,7 @@ func (r *Report) AttackReportLogInfo(request *http.Request) core.Response {
 		return query.Find()
 	})
 	if err != nil {
-		return core.Fail("获取拦截日志失败")
+		return core.Fail(core.Lan("modules.attack_report.get_intercept_log.fail"))
 	}
 	return core.Success(res)
 }
@@ -454,16 +454,16 @@ func (r *Report) GetFileContent(request *http.Request) core.Response {
 		path = public.InterfaceToString(v)
 	}
 	if len(path) != 73 {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.attack_report.param.error"))
 	}
 	if path == "" {
-		return core.Fail("缺少参数：path")
+		return core.Fail(core.Lan("modules.attack_report.path.missing"))
 	}
 	if strings.Contains(path, "..") {
-		return core.Fail("文件路径不合法")
+		return core.Fail(core.Lan("modules.attack_report.path.invalid"))
 	}
 	if !strings.HasPrefix(path, "/www/cloud_waf/nginx/conf.d/waf/logs/") || !strings.HasSuffix(path, ".log") {
-		return core.Fail("文件路径不合法")
+		return core.Fail(core.Lan("modules.attack_report.path.invalid"))
 	}
 
 	file_data, err := public.ReadFile(path)
@@ -499,14 +499,14 @@ func (r *Report) exportDataToCSV1(data []types.ExportData1, filePath string, hea
 		actionStr := ""
 		switch d.Action {
 		case 1:
-			actionStr = "观察"
+			actionStr = core.Lan("modules.attack_report.observe")
 		case 2:
-			actionStr = "拦截"
+			actionStr = core.Lan("modules.attack_report.intercept")
 		case 3:
-			actionStr = "拦截"
+			actionStr = core.Lan("modules.attack_report.intercept")
 
 		default:
-			actionStr = "未知"
+			actionStr = core.Lan("modules.attack_report.unknown")
 		}
 		tm := time.Unix(d.Time, 0).Format("2006-01-02 15:04:05")
 		row := []string{tm, actionStr, d.Server_name, d.Uri, d.Ip, d.Ip_country, d.Risk_type}
@@ -552,13 +552,13 @@ func (r *Report) exportDataToCSV1__(data []types.ExportData1, filePath string, h
 		actionStr := ""
 		switch d.Action {
 		case 1:
-			actionStr = "观察"
+			actionStr = core.Lan("modules.attack_report.observe")
 		case 2:
-			actionStr = "拦截"
+			actionStr = core.Lan("modules.attack_report.intercept")
 		case 3:
-			actionStr = "拦截"
+			actionStr = core.Lan("modules.attack_report.intercept")
 		default:
-			actionStr = "未知"
+			actionStr = core.Lan("modules.attack_report.unknown")
 		}
 		tm := time.Unix(d.Time, 0).Format("2006-01-02 15:04:05")
 		row := []string{tm, actionStr, d.Server_name, d.Uri, d.Ip, d.Ip_country, d.Risk_type}
@@ -600,15 +600,15 @@ func (r *Report) exportDataToCSV2(data []types.ExportData2, filePath string, hea
 		switch d.Block_status {
 		case 1:
 			if now > d.Time+d.Blocking_time {
-				blockStatusStr = "已解封"
+				blockStatusStr = core.Lan("modules.attack_report.unblocked")
 			} else {
-				blockStatusStr = "封锁中"
+				blockStatusStr = core.Lan("modules.attack_report.blocking")
 			}
 
 		case 0:
-			blockStatusStr = "已解封"
+			blockStatusStr = core.Lan("modules.attack_report.unblocked")
 		default:
-			blockStatusStr = "未知"
+			blockStatusStr = core.Lan("modules.attack_report.unknown")
 		}
 		tm := time.Unix(d.Time, 0).Format("2006-01-02 15:04:05")
 		row := []string{tm, blockStatusStr, strconv.Itoa(int(d.Blocking_time)) + "s", d.Server_name, d.Uri, d.Ip, d.Ip_country, d.Risk_type}
@@ -629,14 +629,14 @@ func (r *Report) UnsetIp(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.IP == "" || params.ID == 0 {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.attack_report.param.error"))
 	}
 	var drop_ip []string
 	var ip_drop map[string]interface{}
 	ress, err := public.HttpPostByToken(public.URL_HTTP_REQUEST+"/get_btwaf_drop_ip", 2)
 	ress = strings.TrimSpace(ress)
 	if err != nil {
-		return core.Fail("解封失败")
+		return core.Fail(core.Lan("modules.attack_report.unblock.fail"))
 	}
 	if ress != "{}" {
 		err = json.Unmarshal([]byte(ress), &drop_ip)
@@ -649,8 +649,8 @@ func (r *Report) UnsetIp(request *http.Request) core.Response {
 		resss, err := public.HttpPostByToken(public.URL_HTTP_REQUEST+"/remove_btwaf_drop_ip?ip="+params.IP, 2)
 		resss = strings.TrimSpace(resss)
 		if err != nil {
-			public.WriteOptLog(fmt.Sprintf("解封IP【%s】失败", params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-			return core.Fail("解封失败")
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_ip.fail"), params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+			return core.Fail(core.Lan("modules.attack_report.unblock.fail"))
 		}
 
 		if resss != "{}" {
@@ -660,23 +660,23 @@ func (r *Report) UnsetIp(request *http.Request) core.Response {
 			}
 		}
 		if c, ok := ip_drop["status"]; ok && c.(bool) != true {
-			public.WriteOptLog(fmt.Sprintf("解封IP【%s】失败", params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_ip.fail"), params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
 			return core.Fail(ip_drop["msg"])
 		}
 		flag := public.DelFilter(params.IP)
 		if flag == 0 {
-			public.WriteOptLog(fmt.Sprintf("解封IP【%s】失败", params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-			return core.Fail("解封失败")
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_ip.fail"), params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+			return core.Fail(core.Lan("modules.attack_report.unblock.fail"))
 		}
 		err = r.updateBlockStatus(params.ID)
 		if err != nil {
-			public.WriteOptLog(fmt.Sprintf("解封IP【%s】失败", params.IP), public.OPT_LOG_TYPE_USER_OPERATION, public.GetUid(request))
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_ip.fail"), params.IP), public.OPT_LOG_TYPE_USER_OPERATION, public.GetUid(request))
 			return core.Fail(err)
 		}
-		public.WriteOptLog(fmt.Sprintf("解封IP【%s】成功", params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-		return core.Success("解封成功")
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_ip.success"), params.IP), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+		return core.Success(core.Lan("modules.attack_report.unblock.fail"))
 	} else {
-		return core.Fail("该ip不在封锁列表中")
+		return core.Fail(core.Lan("modules.attack_report.ip_not_in_block_list"))
 	}
 
 }
@@ -684,8 +684,8 @@ func (r *Report) UnsetIp(request *http.Request) core.Response {
 func (r *Report) UnsetAllIp(request *http.Request) core.Response {
 	ress, err := public.HttpPostByToken(public.URL_HTTP_REQUEST+"/clean_btwaf_drop_ip", 2)
 	if err != nil {
-		public.WriteOptLog(fmt.Sprintf("解封所有IP失败"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-		return core.Fail("解封失败")
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_all_ip.fail")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+		return core.Fail(core.Lan("modules.attack_report.unblock.fail"))
 	}
 	var res_data map[string]interface{}
 	err1 := json.Unmarshal([]byte(ress), &res_data)
@@ -693,21 +693,21 @@ func (r *Report) UnsetAllIp(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if c, ok := res_data["status"]; ok && c.(bool) != true {
-		public.WriteOptLog(fmt.Sprintf("解封所有IP失败"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_all_ip.fail")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
 		return core.Fail(res_data["msg"])
 	}
 	flag1 := public.DelFilterallV4()
 	flag2 := public.DelFilterallV6()
 	if flag1 == 0 && flag2 == 0 {
-		public.WriteOptLog(fmt.Sprintf("解封所有IP失败"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-		return core.Fail("解封失败")
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_all_ip.fail")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+		return core.Fail(core.Lan("modules.attack_report.unblock.fail"))
 	}
 	err = r.updateBlockStatus(0)
 	if err != nil {
-		public.WriteOptLog(fmt.Sprintf("解封所有IP失败"), public.OPT_LOG_TYPE_USER_OPERATION, public.GetUid(request))
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_all_ip.fail")), public.OPT_LOG_TYPE_USER_OPERATION, public.GetUid(request))
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("解封所有IP成功"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.unblock_all_ip.success")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
 	return core.Success(res_data["msg"])
 }
 
@@ -786,10 +786,10 @@ func (r *Report) CcList(request *http.Request) core.Response {
 			0,
 		}).Delete()
 		if errs != nil {
-			return core.Fail("清空失败")
+			return core.Fail(core.Lan("modules.attack_report.clear.fail"))
 		}
-		public.WriteOptLog(fmt.Sprintf("CC事件清空成功"), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
-		return core.Success("清空成功")
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.cc_event.clear.success")), public.OPT_LOG_TYPE_ATTACK_REPORT, public.GetUid(request))
+		return core.Success(core.Lan("modules.attack_report.clear.success"))
 	}
 	resp, err := public.SimplePage(query, params)
 	if err != nil {
@@ -910,14 +910,14 @@ func (r *Report) DeleteRuleHitList(request *http.Request) core.Response {
 	public.HttpPostByToken(public.URL_HTTP_REQUEST+"/clean_btwaf_logs", 15)
 	path := "/www/cloud_waf/nginx/conf.d/waf/data/btwaf_rule_hit.json"
 	if !public.FileExists(path) {
-		return core.Success("清空成功")
+		return core.Success(core.Lan("modules.attack_report.clear.success"))
 	}
 	err := os.Remove(path)
 	if err != nil {
-		return core.Fail("清空失败")
+		return core.Fail(core.Lan("modules.attack_report.clear.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("清空规则命中日志成功"), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
-	return core.Success("清空成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.attack_report.rule_hit_log.clear.success")), public.OPT_LOG_TYPE_MAN_MACHINE, public.GetUid(request))
+	return core.Success(core.Lan("modules.attack_report.clear.success"))
 }
 
 func (r *Report) GetRuleHitTypeList(request *http.Request) core.Response {
@@ -965,9 +965,9 @@ func (r *Report) SetHitType(request *http.Request) core.Response {
 	}
 	_, err = public.WriteFile(r.hit_type_path, string(rules_js))
 	if err != nil {
-		return core.Fail("设置失败")
+		return core.Fail(core.Lan("modules.attack_report.set.fail"))
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	return core.Success("设置成功")
+	return core.Success(core.Lan("modules.attack_report.set.success"))
 
 }

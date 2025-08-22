@@ -27,7 +27,7 @@ func (mtd *method) call(args any) (any, error) {
 	}
 	argList := reflect.ValueOf(args)
 	if mtd.argsNum != argList.Len() {
-		return nil, errors.New(fmt.Sprintf("参数数量错误：当前方法需要%d个参数，实际传入%d个参数", mtd.argsNum, argList.Len()))
+		return nil, errors.New(fmt.Sprintf(language.Locate("core.registry.param_count.error"), mtd.argsNum, argList.Len()))
 	}
 	argValues := make([]reflect.Value, 0, mtd.argsNum)
 	for i := 0; i < mtd.argsNum; i++ {
@@ -44,7 +44,7 @@ func (mtd *method) call(args any) (any, error) {
 		}
 		argType := argValue.Type()
 		if inType != argType {
-			return nil, errors.New(fmt.Sprintf("参数类型错误：参数[%d]的类型应该为%s，实际类型为%s", i, inType, argType))
+			return nil, errors.New(fmt.Sprintf(language.Locate("core.registry.param_type.error"), i, inType, argType))
 		}
 		argValues = append(argValues, argValue)
 	}
@@ -192,7 +192,7 @@ func (r *Registry) Call(typeName, methodName string, args interface{}) (interfac
 	}
 
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("api不存在：%s", key))
+		return nil, errors.New(fmt.Sprintf(language.Locate("core.registry.api_not_found"), key))
 	}
 	defer r.callAfter(key)
 	return mtd.call(args)

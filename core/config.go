@@ -45,6 +45,8 @@ type ServerIP struct {
 
 func init() {
 	parseAuthIgnore()
+	lang := readLanguageFromConfig()
+	language.SetLang(lang)
 }
 
 func parseAuthIgnore() {
@@ -147,13 +149,13 @@ func GetServerPort() (serverPort string) {
 		serverPort = defaultPort
 		err = os.WriteFile(serverPortFile, []byte(serverPort), 0644)
 		if err != nil {
-			fmt.Println("持久化Web服务端口失败: ", err)
+			fmt.Println(language.Locate("core.config.persist_port.fail"), err)
 		}
 	}
 	if serverPort == "" {
 		bs, err := os.ReadFile(serverPortFile)
 		if err != nil {
-			fmt.Println("获取Web服务端口失败: ", err)
+			fmt.Println(language.Locate("core.config.get_port.fail"), err)
 			serverPort = defaultPort
 		} else {
 			serverPort = string(bs)
@@ -163,7 +165,7 @@ func GetServerPort() (serverPort string) {
 		serverPort = defaultPort
 		err = os.WriteFile(serverPortFile, []byte(serverPort), 0644)
 		if err != nil {
-			fmt.Println("持久化Web服务端口失败: ", err)
+			fmt.Println(language.Locate("core.config.persist_port.fail"), err)
 		}
 	}
 	return strings.TrimSpace(serverPort)
@@ -177,7 +179,7 @@ func SetServerPort(serverPort string) error {
 	}
 	defer fp.Close()
 	if !validate.IsPort(serverPort) {
-		return errors.New(fmt.Sprintf("端口范围错误: %s", serverPort))
+		return errors.New(fmt.Sprintf(language.Locate("core.config.port_range.error"), serverPort))
 	}
 	_, err = fp.Write([]byte(serverPort))
 	return err
@@ -192,14 +194,14 @@ func GetServerVersion() (version string) {
 		version = defaultVersion
 		err = os.WriteFile(serverVersionFile, []byte(version), 0644)
 		if err != nil {
-			fmt.Println("1-获取版本号失败: ", err)
+			fmt.Println(language.Locate("core.config.get_version.fail.1"), err)
 		}
 
 	}
 	if version == "" {
 		bs, err := os.ReadFile(serverVersionFile)
 		if err != nil {
-			fmt.Println("2-获取版本号失败: ", err)
+			fmt.Println(language.Locate("core.config.get_version.fail.2"), err)
 			version = defaultVersion
 		} else {
 			version = string(bs)
@@ -209,7 +211,7 @@ func GetServerVersion() (version string) {
 		version = defaultVersion
 		err = os.WriteFile(serverVersionFile, []byte(version), 0644)
 		if err != nil {
-			fmt.Println("3-获取版本号失败: ", err)
+			fmt.Println(language.Locate("core.config.get_version.fail.3"), err)
 		}
 	}
 	return strings.TrimSpace(version)
@@ -308,10 +310,10 @@ func IsDemo() bool {
 	return isDemo
 }
 
-func Language() string {
+func readLanguageFromConfig() string {
 	data, err := Rconfigfile("./config/sysconfig.json")
 	if err != nil {
-		return ""
+		return language.CN
 	}
 	if _, ok := data["language"]; !ok {
 		return language.CN
@@ -320,6 +322,10 @@ func Language() string {
 		return strings.ToUpper(strings.TrimSpace(v))
 	}
 	return language.CN
+}
+
+func Language() string {
+	return readLanguageFromConfig()
 }
 
 func Lan(key string, args ...any) string {

@@ -30,7 +30,7 @@ func init() {
 type Nginx struct{}
 
 func (n *Nginx) CreateSite(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"privkey", "fullchain", "sitename", "polling_algorithm", "cdn", "ip_list", "domain", "is_https", "host"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"privkey", "fullchain", "sitename", "polling_algorithm", "cdn", "ip_list", "domain", "is_https", "host"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -59,13 +59,13 @@ func (n *Nginx) CreateSite(request *http.Request) core.Response {
 		}
 	}
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf("添加"+sitename+"网站成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("网站创建成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.add_site.success.log"), sitename), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.add_site.success"))
 
 }
 
 func (n *Nginx) ModifySite(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "sitename", "cdn", "polling_algorithm", "domain", "ip_list", "is_https", "privkey", "fullchain"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "sitename", "cdn", "polling_algorithm", "domain", "ip_list", "is_https", "privkey", "fullchain"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -83,7 +83,7 @@ func (n *Nginx) ModifySite(request *http.Request) core.Response {
 		if isRestore {
 			public.RestoreSite(site_id)
 			if err != nil {
-				logging.Debug("回源配置失败，恢复站点配置失败")
+				logging.Debug(core.Lan("modules.nginx.return_source.fail_and_restore.fail"))
 			}
 		}
 		return core.Fail(err)
@@ -91,13 +91,13 @@ func (n *Nginx) ModifySite(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf("编辑"+sitename+"网站成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("编辑网站成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.edit_site.success.log"), sitename), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.edit_site.success"))
 
 }
 
 func (n *Nginx) DeleteSite(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -110,13 +110,13 @@ func (n *Nginx) DeleteSite(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf("删除"+siteName+"网站成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("删除成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.delete_site.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.delete.success"))
 
 }
 
 func (n *Nginx) ModifySiteInfo(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "site_name"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "site_name"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -128,13 +128,13 @@ func (n *Nginx) ModifySiteInfo(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("修改网站名称"+oldSiteName+"为"+newSiteName+"成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("操作成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.edit_site_name.success.log"), oldSiteName, newSiteName), public.OPT_LOG_TYPE_SITE_List, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.op.success"))
 
 }
 
 func (n *Nginx) GetSites(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"p", "p_size"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"p", "p_size"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -147,7 +147,7 @@ func (n *Nginx) GetSites(request *http.Request) core.Response {
 }
 
 func (n *Nginx) DeployCert(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "ssl_name"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "ssl_name"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -155,14 +155,14 @@ func (n *Nginx) DeployCert(request *http.Request) core.Response {
 	siteName, _ := public.GetSiteNameBySiteId(siteId)
 	sslName := public.InterfaceToString(params["ssl_name"].(interface{}))
 	if sslName == "" || siteId == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.nginx.param.error"))
 	}
 	isRestore, err := public.DeployCert(siteId, sslName)
 	if err != nil {
 		if isRestore {
 			public.RestoreSite(siteId)
 			if err != nil {
-				logging.Debug("回源配置失败，恢复站点配置失败")
+				logging.Debug(core.Lan("modules.nginx.return_source.fail_and_restore.fail"))
 			}
 		}
 		return core.Fail(err)
@@ -170,8 +170,8 @@ func (n *Nginx) DeployCert(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf("证书夹部署"+sslName+"证书到"+siteName+"站点成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("部署成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.deploy_cert.success.log"), sslName, siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.deploy.success"))
 
 }
 
@@ -195,7 +195,7 @@ func (n *Nginx) ModifyProxyinfo(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if count == 0 {
-		return core.Fail("网站不存在")
+		return core.Fail(core.Lan("modules.nginx.site.not_found"))
 	}
 
 	siteName, _ := public.GetSiteNameBySiteId(siteId)
@@ -224,32 +224,32 @@ func (n *Nginx) ModifyProxyinfo(request *http.Request) core.Response {
 	}
 	boolV, err := public.WriteFile(public.SiteJsonPath+siteId+".json", string(jsonStr))
 	if !boolV {
-		return core.Fail("写入json配置文件失败")
+		return core.Fail(core.Lan("modules.nginx.write_json.fail"))
 	}
 	upsteamConf, _ := public.AddNginxUpstreamConf(siteId)
 	public.AddNignxJsonToConf(siteId, upsteamConf)
 	err = ReloadNginx()
 	if err != nil {
 		defer public.RestoreFile([]string{public.SiteJsonPath + siteId + ".json", public.VhostPath + siteId + ".conf"})
-		return core.Fail("重载nginx失败")
+		return core.Fail(core.Lan("modules.nginx.reload.fail"))
 	}
 
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf("网站"+siteName+"修改常用参数配置成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("网站" + siteName + "修改常用参数配置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.edit_proxy.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(fmt.Sprintf(core.Lan("modules.nginx.edit_proxy.success.log"), siteName))
 
 }
 
 func (n *Nginx) DeleteSsl(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"ssl_name"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"ssl_name"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
 	sslName := public.InterfaceToString(params["ssl_name"].(interface{}))
 	if sslName == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.nginx.param.error"))
 	}
 	err = public.DelSslInfo(sslName)
 	if err != nil {
@@ -258,13 +258,13 @@ func (n *Nginx) DeleteSsl(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf("证书夹删除"+sslName+"证书成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("删除成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.delete_ssl.success.log"), sslName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.delete.success"))
 
 }
 
 func (n *Nginx) InstallCert(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"privkey", "fullchain", "site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"privkey", "fullchain", "site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -276,7 +276,7 @@ func (n *Nginx) InstallCert(request *http.Request) core.Response {
 	for _, siteId := range siteIds {
 		siteName, _ := public.GetSiteNameBySiteId(siteId)
 		if privkey == "" || fullchain == "" || siteId == "" {
-			return core.Fail("参数错误")
+			return core.Fail(core.Lan("modules.nginx.param.error"))
 		}
 		isRestore, err := public.InstallCert(privkey, fullchain, siteId)
 
@@ -285,7 +285,7 @@ func (n *Nginx) InstallCert(request *http.Request) core.Response {
 			if isRestore {
 				public.RestoreSite(siteId)
 				if err != nil {
-					logging.Debug(siteName + "站点SSL证书安装失败！")
+					logging.Debug(fmt.Sprintf(core.Lan("modules.nginx.install_cert.fail.log"), siteName))
 				}
 			}
 		} else {
@@ -298,11 +298,11 @@ func (n *Nginx) InstallCert(request *http.Request) core.Response {
 	public.BackupWebWafConfig()
 	errorInfo := ""
 	if len(ErrorSite) > 0 {
-		errorInfo = "安装ssl证书到" + strings.Join(ErrorSite, ",") + "站点失败"
+		errorInfo = fmt.Sprintf(core.Lan("modules.nginx.install_cert_to_site.fail"), strings.Join(ErrorSite, ","))
 	}
 	successInfo := ""
 	if len(AccessSite) > 0 {
-		successInfo = "安装ssl证书到" + strings.Join(AccessSite, ",") + "站点成功"
+		successInfo = fmt.Sprintf(core.Lan("modules.nginx.install_cert_to_site.success"), strings.Join(AccessSite, ","))
 	}
 	fmtInfo := ""
 	if successInfo != "" {
@@ -311,7 +311,7 @@ func (n *Nginx) InstallCert(request *http.Request) core.Response {
 		fmtInfo = errorInfo
 	}
 
-	public.WriteOptLog(fmt.Sprintf("编辑网站-"+fmtInfo), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.edit_site.success.log"), fmtInfo), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
 	if successInfo == "" {
 		return core.Fail(fmtInfo)
 	}
@@ -320,13 +320,13 @@ func (n *Nginx) InstallCert(request *http.Request) core.Response {
 }
 
 func (n *Nginx) RemoveSiteSsl(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
 	siteId := public.InterfaceToString(params["site_id"].(interface{}))
 	if siteId == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.nginx.param.error"))
 	}
 	siteName, _ := public.GetSiteNameBySiteId(siteId)
 	err = public.RemoveSiteSslInfo(siteId)
@@ -336,13 +336,13 @@ func (n *Nginx) RemoveSiteSsl(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf("关闭"+siteName+"站点证书成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("关闭成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.close_ssl.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.close.success"))
 
 }
 
 func (n *Nginx) UserConfig(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "content"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "content"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -358,13 +358,13 @@ func (n *Nginx) UserConfig(request *http.Request) core.Response {
 	}
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
-	public.WriteOptLog(fmt.Sprintf(siteName+"站点-自定义配置文件修改成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("配置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.user_config.edit.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.config.success"))
 
 }
 
 func (n *Nginx) GetUserConfig(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -376,7 +376,7 @@ func (n *Nginx) GetUserConfig(request *http.Request) core.Response {
 
 func (n *Nginx) ReturnSource(request *http.Request) core.Response {
 
-	params, err := public.ParamsCheck(request, []string{"site_id", "polling_algorithm", "host"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "polling_algorithm", "host"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -385,7 +385,7 @@ func (n *Nginx) ReturnSource(request *http.Request) core.Response {
 	pollingAlgorithm := public.InterfaceToString(params["polling_algorithm"].(interface{}))
 	HostStr := public.InterfaceToString(params["host"].(interface{}))
 	if pollingAlgorithm == "" || siteId == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.nginx.param.error"))
 	}
 
 	siteName, _ := public.GetSiteNameBySiteId(siteId)
@@ -394,7 +394,7 @@ func (n *Nginx) ReturnSource(request *http.Request) core.Response {
 		if isRestore {
 			public.RestoreSite(siteId)
 			if err != nil {
-				logging.Debug("回源配置失败，恢复u站点配置失败")
+				logging.Debug(core.Lan("modules.nginx.return_source.fail_and_restore.fail"))
 			}
 		}
 		return core.Fail(err)
@@ -402,40 +402,40 @@ func (n *Nginx) ReturnSource(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 
-	public.WriteOptLog(fmt.Sprintf(siteName+"网站-回源配置成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("配置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.return_source.config.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.config.success"))
 
 }
 
 func (n *Nginx) DownloadSsl(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
 	siteId := public.InterfaceToString(params["site_id"].(interface{}))
 
 	if siteId == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.nginx.param.error"))
 	}
 	siteName, _ := public.GetSiteNameBySiteId(siteId)
 	response, err := public.DownloadSsl(siteId)
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf(siteName+"网站-下载ssl证书成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.download_ssl.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
 	return response
 
 }
 
 func (n *Nginx) AddDomain(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "domain"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "domain"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
 	siteId := public.InterfaceToString(params["site_id"].(interface{}))
 	domain := public.InterfaceArray_To_StringArray(params["domain"].([]interface{}))
 	if siteId == "default_wildcard_domain_server" {
-		return core.Fail("通配所有域名站点不支持添加域名，如需添加域名请新建站点")
+		return core.Fail(core.Lan("modules.nginx.add_domain.wildcard.fail"))
 	}
 	err = public.AddDomain(domain, siteId)
 	if err != nil {
@@ -445,13 +445,13 @@ func (n *Nginx) AddDomain(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf(siteName+"网站-添加域名成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("配置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.add_domain.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.config.success"))
 
 }
 
 func (n *Nginx) DelDomain(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "domain"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "domain"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -459,7 +459,7 @@ func (n *Nginx) DelDomain(request *http.Request) core.Response {
 	domain := public.InterfaceArray_To_StringArray(params["domain"].([]interface{}))
 	siteName, _ := public.GetSiteNameBySiteId(siteId)
 	if siteId == "default_wildcard_domain_server" {
-		return core.Fail("通配所有域名站点不支持删除域名，如需删除域名请删除此站点")
+		return core.Fail(core.Lan("modules.nginx.delete_domain.wildcard.fail"))
 	}
 	err = public.DelDomain(domain, siteId)
 	if err != nil {
@@ -468,13 +468,13 @@ func (n *Nginx) DelDomain(request *http.Request) core.Response {
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
 	public.BackupWebWafConfig()
-	public.WriteOptLog(fmt.Sprintf(siteName+"网站-删除域名成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("配置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.delete_domain.success.log"), siteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.config.success"))
 
 }
 
 func (n *Nginx) GetDomain(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -485,7 +485,7 @@ func (n *Nginx) GetDomain(request *http.Request) core.Response {
 }
 
 func (n *Nginx) ModifyResolver(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "status", "inspection_time"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "status", "inspection_time"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -506,7 +506,7 @@ func (n *Nginx) ModifyResolver(request *http.Request) core.Response {
 			return core.Fail(err)
 		}
 		if len(newDomainParse) == 0 {
-			return core.Fail("此站点无回源域名，无法开启自动巡检回源域名解析变化")
+			return core.Fail(core.Lan("modules.nginx.resolver.no_domain"))
 		}
 		if !public.M("site_return_domain_check").Where("site_id=?", siteId).Exists() {
 			_, err = public.M("site_return_domain_check").Insert(map[string]any{"status": status, "inspection_time": inspectionTime, "site_id": siteId, "parse_info": string(newDomainParseJson)})
@@ -531,8 +531,8 @@ func (n *Nginx) ModifyResolver(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf(data.SiteName+"网站-回源域名地址巡检成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("配置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.resolver.success.log"), data.SiteName), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.config.success"))
 
 }
 
@@ -555,7 +555,7 @@ func (n *Nginx) DeleteAllSite(request *http.Request) core.Response {
 	}
 	public.UpdateWafConfig("config", 2)
 	public.UpdateWafConfig("rule", 2)
-	return core.Success("删除成功")
+	return core.Success(core.Lan("modules.nginx.delete.success"))
 
 }
 
@@ -630,7 +630,7 @@ func (n *Nginx) GetRealTimeData(request *http.Request) core.Response {
 }
 
 func (n *Nginx) SetForceHttps(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "force_https"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "force_https"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -641,17 +641,17 @@ func (n *Nginx) SetForceHttps(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	statusStr := "关闭"
+	statusStr := core.Lan("modules.nginx.close")
 	if forceHttps {
-		statusStr = "开启"
+		statusStr = core.Lan("modules.nginx.open")
 	}
-	public.WriteOptLog(fmt.Sprintf(siteName+"网站-"+statusStr+"强制https成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.set_force_https.success.log"), siteName, statusStr), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.set.success"))
 
 }
 
 func (n *Nginx) GetSslInfo(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -662,7 +662,7 @@ func (n *Nginx) GetSslInfo(request *http.Request) core.Response {
 }
 
 func (n *Nginx) GetSslProtocolsAndCiphers(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -678,7 +678,7 @@ func (n *Nginx) GetSslProtocolsAndCiphers(request *http.Request) core.Response {
 
 func (n *Nginx) SetSslProtocolsOrCiphers(request *http.Request) core.Response {
 
-	params, err := public.ParamsCheck(request, []string{"site_id", "ssl_protocols", "ssl_ciphers"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "ssl_protocols", "ssl_ciphers"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -689,13 +689,13 @@ func (n *Nginx) SetSslProtocolsOrCiphers(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("设置"+siteId+"网站ssl加密套件为"+sslCiphers+";安全协议为"+strings.Join(sslProtocols, ",")), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.set_ssl_suite.success.log"), siteId, sslCiphers, strings.Join(sslProtocols, ",")), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.set.success"))
 
 }
 
 func (n *Nginx) GetSiteSetting(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -720,7 +720,7 @@ func (n *Nginx) GetReplaceOpen(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if params.SiteId == "" {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.nginx.param.error"))
 	}
 
 	data := make(map[string]bool)
@@ -763,7 +763,7 @@ func (n *Nginx) getSpeedData() (map[string]interface{}, error) {
 }
 
 func (n *Nginx) GetReturnSource(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -778,7 +778,7 @@ func (n *Nginx) GetReturnSource(request *http.Request) core.Response {
 }
 
 func (n *Nginx) AddReturnSourceIp(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"site_id", "source_ip", "polling_algorithm", "host", "max_fails", "fail_timeout", "weight", "status", "ps"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "source_ip", "polling_algorithm", "host", "max_fails", "fail_timeout", "weight", "status", "ps"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -797,14 +797,14 @@ func (n *Nginx) AddReturnSourceIp(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("添加"+siteId+"网站回源节点"+sourceIp+"成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("添加成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.add_node.success.log"), siteId, sourceIp), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.add.success"))
 
 }
 
 func (n *Nginx) ModifyReturnSourceIp(request *http.Request) core.Response {
 
-	params, err := public.ParamsCheck(request, []string{"site_id", "source_id", "source_ip", "polling_algorithm", "host", "max_fails", "fail_timeout", "weight", "status", "old_status", "ps"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "source_id", "source_ip", "polling_algorithm", "host", "max_fails", "fail_timeout", "weight", "status", "old_status", "ps"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -825,13 +825,13 @@ func (n *Nginx) ModifyReturnSourceIp(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("编辑"+siteId+"网站回源节点"+sourceIp+"成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("编辑成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.edit_node.success.log"), siteId, sourceIp), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.edit.success"))
 }
 
 func (n *Nginx) DelReturnSourceIp(request *http.Request) core.Response {
 
-	params, err := public.ParamsCheck(request, []string{"site_id", "source_id", "source_ip"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"site_id", "source_id", "source_ip"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -843,13 +843,13 @@ func (n *Nginx) DelReturnSourceIp(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	public.WriteOptLog(fmt.Sprintf("删除"+siteId+"网站回源节点"+sourceIp+"成功"), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("删除成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.delete_node.success.log"), siteId, sourceIp), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.delete.success"))
 
 }
 
 func (n *Nginx) GetAddDomainInfo(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"domains"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"domains"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -897,7 +897,7 @@ func (n *Nginx) GetAddDomainInfo(request *http.Request) core.Response {
 }
 
 func (n *Nginx) GetDomainResponseStatus(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"url", "extranet_ip_list", "intranet_ip_list", "is_force_https", "http_protocol", "is_ssl", "is_ssl_check"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"url", "extranet_ip_list", "intranet_ip_list", "is_force_https", "http_protocol", "is_ssl", "is_ssl_check"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -923,19 +923,19 @@ func (n *Nginx) GetDomainResponseStatus(request *http.Request) core.Response {
 	if isSslCheck && !isSsl && isForceHttps {
 		result.Status = false
 		result.Resolver = 404
-		result.Error = "源站有开启强制https，WAF站建议开启SSL，否则会导致访问404"
+		result.Error = core.Lan("modules.nginx.check_status.ssl_force.fail")
 		return core.Fail(result)
 	}
 
 	if len(intranetIpList) == 0 && len(extranetIpList) == 0 {
 		result.Status = false
-		result.Error = "该源站地址可能不是防护域名所在的IP地址，请检查源站地址是否填写正确"
+		result.Error = core.Lan("modules.nginx.check_status.ip.incorrect")
 	}
 
 	if isForceHttps && httpProtocol == "http" {
 		result.Status = false
 		result.Resolver = 301
-		result.Error = "源站有开启强制https，回源协议建议设置为https，否则会导致301重定向过多"
+		result.Error = core.Lan("modules.nginx.check_status.http_force.fail")
 		return core.Fail(result)
 	}
 
@@ -943,18 +943,18 @@ func (n *Nginx) GetDomainResponseStatus(request *http.Request) core.Response {
 	result.StatusCode = statusCode
 	if err != nil {
 		result.Status = false
-		result.Error += "；该源站地址无法访问"
+		result.Error += core.Lan("modules.nginx.check_status.cannot_access")
 		return core.Fail(result)
 	}
 
 	if statusCode < 200 || statusCode > 399 {
 		if statusCode == 404 {
 			result.Status = false
-			result.Error += "；源站首页访问404"
+			result.Error += core.Lan("modules.nginx.check_status.404")
 			return core.Fail(result)
 		}
 		result.Status = false
-		result.Error += "；该源站地址无法访问"
+		result.Error += core.Lan("modules.nginx.check_status.cannot_access")
 		return core.Fail(result)
 	}
 
@@ -970,13 +970,13 @@ func (n *Nginx) GetDomainResponseStatus(request *http.Request) core.Response {
 		statusCode, location, err = checkStatusCodeAndLocation(urlTwo)
 		if err != nil {
 			result.Status = false
-			result.Error += "；" + urlTwo + " 重定向域名无法访问"
+			result.Error += fmt.Sprintf(core.Lan("modules.nginx.check_status.redirect.cannot_access"), urlTwo)
 			result.Resolver = 301
 			return core.Fail(result)
 		}
 		if statusCode == 301 {
 			result.Status = false
-			result.Error += "；301重定向次数过多"
+			result.Error += core.Lan("modules.nginx.check_status.redirect.too_many")
 			result.Resolver = 301
 			return core.Fail(result)
 		}
@@ -1007,7 +1007,7 @@ func checkStatusCodeAndLocation(url string) (int, string, error) {
 }
 
 func (n *Nginx) SetListenIpvSixBySite(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"listen_ipv6", "site_id"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"listen_ipv6", "site_id"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -1038,25 +1038,25 @@ func (n *Nginx) SetListenIpvSixBySite(request *http.Request) core.Response {
 	if err != nil {
 		return core.Fail(err)
 	}
-	statusString := "关闭"
+	statusString := core.Lan("modules.nginx.close")
 	if ListenIpv6 {
-		statusString = "开启"
+		statusString = core.Lan("modules.nginx.open")
 	}
-	public.WriteOptLog(fmt.Sprintf("网站"+siteId+"设置监听IPv6监听状态为"+statusString), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
-	return core.Success("设置监听IPv6成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.ipv6.set.success.log"), siteId, statusString), public.OPT_LOG_TYPE_SITE_LIST, public.GetUid(request))
+	return core.Success(core.Lan("modules.nginx.ipv6.set.success"))
 
 }
 
 func (n *Nginx) CheckReturnSourceAuth(request *http.Request) core.Response {
 	isBool := public.GetIsSpecifyVersion(3)
 	if isBool {
-		return core.Success("授权检测成功")
+		return core.Success(core.Lan("modules.nginx.auth_check.success"))
 	}
-	return core.Fail("授权检测失败")
+	return core.Fail(core.Lan("modules.nginx.auth_check.fail"))
 }
 
 func (n *Nginx) AddTcpLoadBalance(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"protocol", "listen_address", "listen_port", "max_timeout", "not_timeout", "ps", "node_info"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"protocol", "listen_address", "listen_port", "max_timeout", "not_timeout", "ps", "node_info"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -1067,16 +1067,16 @@ func (n *Nginx) AddTcpLoadBalance(request *http.Request) core.Response {
 	notTimeout := public.InterfaceToString(params["not_timeout"].(interface{}))
 
 	if protocol != "tcp" && protocol != "udp" && protocol != "tcp/udp" {
-		return core.Fail("协议类型不正确")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.protocol.incorrect"))
 	}
 	if _, err := strconv.Atoi(maxTimeout); err != nil {
-		return core.Fail("最大超时时间不正确")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.max_timeout.incorrect"))
 	}
 	if _, err := strconv.Atoi(notTimeout); err != nil {
-		return core.Fail("非超时时间不正确")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.not_timeout.incorrect"))
 	}
 	if listenAddress != "127.0.0.1" && listenAddress != "0.0.0.0" {
-		return core.Fail("监听地址不正确")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.listen_addr.incorrect"))
 	}
 
 	ps := public.InterfaceToString(params["ps"].(interface{}))
@@ -1085,22 +1085,22 @@ func (n *Nginx) AddTcpLoadBalance(request *http.Request) core.Response {
 	for i, item := range tmpNodeInfo {
 		if m, ok := item.(map[string]interface{}); ok {
 			if !validate.IsPort(m["node_port"].(string)) {
-				return core.Fail("目标端口不正确")
+				return core.Fail(core.Lan("modules.nginx.tcp_lb.node_port.incorrect"))
 			}
 			if !validate.IsHost(m["node_address"].(string)) {
-				return core.Fail("目标主机地址不正确")
+				return core.Fail(core.Lan("modules.nginx.tcp_lb.node_addr.incorrect"))
 			}
 			if _, err := strconv.Atoi(m["node_weight"].(string)); err != nil {
-				return core.Fail("权重不正确")
+				return core.Fail(core.Lan("modules.nginx.tcp_lb.weight.incorrect"))
 			}
 			if _, err := strconv.Atoi(m["node_max_fails"].(string)); err != nil {
-				return core.Fail("最大失败次数不正确")
+				return core.Fail(core.Lan("modules.nginx.tcp_lb.max_fails.incorrect"))
 			}
 			if _, err := strconv.Atoi(m["node_fail_timeout"].(string)); err != nil {
-				return core.Fail("失败超时时间不正确")
+				return core.Fail(core.Lan("modules.nginx.tcp_lb.fail_timeout.incorrect"))
 			}
 			if _, err := strconv.Atoi(m["node_status"].(string)); err != nil {
-				return core.Fail("node_status 不正确")
+				return core.Fail(core.Lan("modules.nginx.tcp_lb.node_status.incorrect"))
 			}
 			nodeInfo := types.LoadNodeInfo{
 				NodeAddress:       m["node_address"].(string),
@@ -1119,31 +1119,31 @@ func (n *Nginx) AddTcpLoadBalance(request *http.Request) core.Response {
 		}
 	}
 	if !validate.IsPort(listenPort) {
-		return core.Fail("waf服务端口不正确")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.waf_port.incorrect"))
 	}
 
 	if !public.CheckPort(public.StringToInt(listenPort)) {
-		return core.Fail("waf服务端口已被占用")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.waf_port.occupied"))
 	}
 	_, err = public.AddTcpLoadBalance(protocol, listenAddress, listenPort, maxTimeout, notTimeout, ps, nodeInfos)
 	if err != nil {
 		return core.Fail(err)
 	}
 
-	public.WriteOptLog(fmt.Sprintf("添加【"+listenPort+"】端口的端口转发成功"), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
-	return core.Success("添加【" + listenPort + "】端口的端口转发成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.add.success.log"), listenPort), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
+	return core.Success(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.add.success.log"), listenPort))
 
 }
 
 func (n *Nginx) ModifyTcpLoadBalance(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"load_balance_name", "load_info"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"load_balance_name", "load_info"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
 
 	loadBalanceName := public.InterfaceToString(params["load_balance_name"].(interface{}))
 	if _, ok := params["load_info"].(map[string]interface{}); !ok {
-		return core.Fail("参数错误")
+		return core.Fail(core.Lan("modules.nginx.param.error"))
 	}
 	jsonData, err := json.Marshal(params["load_info"].(map[string]interface{}))
 	if err != nil {
@@ -1182,7 +1182,7 @@ func (n *Nginx) ModifyTcpLoadBalance(request *http.Request) core.Response {
 			if SourceProtocol != "udp" {
 				err = public.DeletePortByProtocol(sourcePort, SourceProtocol, true)
 				if err != nil {
-					return core.Fail("【" + sourcePort + "】端口删除防火墙端口失败")
+					return core.Fail(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.del_port.fail"), sourcePort))
 				}
 			}
 			if LoadInfoMap.ListenAddress == "0.0.0.0" {
@@ -1193,11 +1193,11 @@ func (n *Nginx) ModifyTcpLoadBalance(request *http.Request) core.Response {
 			if LoadInfoMap.Protocol != sourceLoadStr.TcpLoadBalance[loadBalanceName].Protocol && sourceAddress == "0.0.0.0" {
 				err = public.DeletePortByProtocol(sourcePort, SourceProtocol, true)
 				if err != nil {
-					return core.Fail("【" + sourcePort + "】端口删除防火墙端口失败")
+					return core.Fail(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.del_port.fail"), sourcePort))
 				}
 				err = public.AllowPortByProtocol(sourcePort, LoadInfoMap.Protocol, true)
 				if err != nil {
-					return core.Fail("【" + sourcePort + "】端口放行防火墙端口失败")
+					return core.Fail(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.allow_port.fail"), sourcePort))
 				}
 			}
 
@@ -1205,10 +1205,10 @@ func (n *Nginx) ModifyTcpLoadBalance(request *http.Request) core.Response {
 		for k, v := range LoadInfoMap.NodeAddressMap {
 			if _, ok := m.NodeAddressMap[k]; ok {
 				if !validate.IsPort(v.NodePort) {
-					return core.Fail("目标端口不正确")
+					return core.Fail(core.Lan("modules.nginx.tcp_lb.node_port.incorrect"))
 				}
 				if !public.IsIpAddr(v.NodeAddress) {
-					return core.Fail("目标主机地址不正确")
+					return core.Fail(core.Lan("modules.nginx.tcp_lb.node_addr.incorrect"))
 				}
 				if _, ok := LoadInfoMap.NodeAddressMap[k]; ok {
 					m.NodeAddressMap[k] = v
@@ -1225,7 +1225,7 @@ func (n *Nginx) ModifyTcpLoadBalance(request *http.Request) core.Response {
 	}
 	boolV, err := public.WriteFile(public.NginxJsonPath+"/nginx.json", string(writeData))
 	if !boolV {
-		return core.Fail("写入nginx.json配置文件失败")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.write_nginx_json.fail"))
 	}
 
 	loadStr, err := public.ReadTcpLoadJsonFile(public.NginxJsonPath + "/nginx.json")
@@ -1235,7 +1235,7 @@ func (n *Nginx) ModifyTcpLoadBalance(request *http.Request) core.Response {
 	tcpContent := tcpUpstreamContent + tcpServerContent
 	boolV, err = public.WriteFile(public.NginxStreamPath+"/tcp.conf", tcpContent)
 	if !boolV {
-		return core.Fail("写入tcp.conf配置文件失败")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.write_tcp_conf.fail"))
 	}
 
 	public.Command(cmd)
@@ -1245,13 +1245,13 @@ func (n *Nginx) ModifyTcpLoadBalance(request *http.Request) core.Response {
 	}
 	public.Command(cmd)
 
-	public.WriteOptLog(fmt.Sprintf("编辑【"+sourceLoadStr.TcpLoadBalance[loadBalanceName].ListenPort+"】端口的端口转发成功"), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
-	return core.Success("编辑【" + sourceLoadStr.TcpLoadBalance[loadBalanceName].ListenPort + "】端口的端口转发成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.edit.success.log"), sourceLoadStr.TcpLoadBalance[loadBalanceName].ListenPort), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
+	return core.Success(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.edit.success.log"), sourceLoadStr.TcpLoadBalance[loadBalanceName].ListenPort))
 
 }
 
 func (n *Nginx) DelTcpLoadBalance(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"load_balance_name", "is_del_port", "port"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"load_balance_name", "is_del_port", "port"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -1260,7 +1260,7 @@ func (n *Nginx) DelTcpLoadBalance(request *http.Request) core.Response {
 	port := public.InterfaceToString(params["port"].(interface{}))
 	loadBalanceContent, err := public.ReadMapStringInterfaceFile(public.NginxJsonPath + "/nginx.json")
 	if !validate.IsPort(port) {
-		return core.Fail("waf服务端口不正确")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.waf_port.incorrect"))
 	}
 
 	if err != nil {
@@ -1276,7 +1276,7 @@ func (n *Nginx) DelTcpLoadBalance(request *http.Request) core.Response {
 		if isDelPort {
 			err = public.DeletePortByProtocol(port, loadBalance[loadBalanceId].(map[string]interface{})["protocol"].(string), true)
 			if err != nil {
-				return core.Fail("【" + port + "】端口删除防火墙端口失败")
+				return core.Fail(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.del_port.fail"), port))
 			}
 		}
 		delete(loadBalance, loadBalanceId)
@@ -1292,7 +1292,7 @@ func (n *Nginx) DelTcpLoadBalance(request *http.Request) core.Response {
 	tcpContent := tcpUpstreamContent + tcpServerContent
 	boolV, err := public.WriteFile(public.NginxStreamPath+"/tcp.conf", tcpContent)
 	if !boolV {
-		return core.Fail("写入tcp.conf配置文件失败")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.write_tcp_conf.fail"))
 	}
 	err = public.ReloadNginx()
 	if err != nil {
@@ -1300,8 +1300,8 @@ func (n *Nginx) DelTcpLoadBalance(request *http.Request) core.Response {
 	}
 	os.Remove(public.LogRootPath + "tcp_udp_" + loadBalanceId + ".log")
 	os.Remove(public.LogRootPath + "tcp_udp_" + loadBalanceId + "error.log")
-	public.WriteOptLog(fmt.Sprintf("删除【"+port+"】端口的端口转发成功"), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
-	return core.Success("删除【" + port + "】端口的端口转发成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.delete.success.log"), port), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
+	return core.Success(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.delete.success.log"), port))
 
 }
 
@@ -1319,7 +1319,7 @@ func (n *Nginx) GetTcpLoadBalance(request *http.Request) core.Response {
 }
 
 func (n *Nginx) ClearTcpLoadBalanceCount(request *http.Request) core.Response {
-	params, err := public.ParamsCheck(request, []string{"load_balance_name"}, "参数错误")
+	params, err := public.ParamsCheck(request, []string{"load_balance_name"}, core.Lan("modules.nginx.param.error"))
 	if err != nil {
 		return core.Fail(err)
 	}
@@ -1337,11 +1337,11 @@ func (n *Nginx) ClearTcpLoadBalanceCount(request *http.Request) core.Response {
 	}
 	boolV, err := public.WriteFile(public.NginxJsonPath+"/nginx.json", string(writeData))
 	if !boolV {
-		return core.Fail("写入nginx.json配置文件失败")
+		return core.Fail(core.Lan("modules.nginx.tcp_lb.write_nginx_json.fail"))
 	}
-	public.WriteOptLog(fmt.Sprintf("端口转发清空"+loadBalanceName+"统计成功"), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.nginx.tcp_lb.clear_count.success.log"), loadBalanceName), public.OPT_LOG_TYPE_PORT_FORWARD, public.GetUid(request))
 
-	return core.Success("清空成功")
+	return core.Success(core.Lan("modules.nginx.clear.success"))
 }
 
 func (n *Nginx) GetSiteLog(request *http.Request) core.Response {
@@ -1357,10 +1357,10 @@ func (n *Nginx) GetSiteLog(request *http.Request) core.Response {
 	}
 	count, err := public.M("site_info").Where("site_id=?", params.SiteId).Count()
 	if err != nil {
-		return core.Fail("查询site_id失败")
+		return core.Fail(core.Lan("modules.nginx.query_site_id.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询site_id失败")
+		return core.Fail(core.Lan("modules.nginx.query_site_id.fail"))
 	}
 
 	if params.Clear == 1 {
@@ -1368,7 +1368,7 @@ func (n *Nginx) GetSiteLog(request *http.Request) core.Response {
 		if err != nil {
 			return core.Fail(err)
 		}
-		return core.Success("清空成功")
+		return core.Success(core.Lan("modules.nginx.clear.success"))
 	}
 
 	result := public.GetSiteLogInfo(params.SiteId, params.Types)
@@ -1387,13 +1387,13 @@ func (n *Nginx) GetLogList(request *http.Request) core.Response {
 	}
 	count, err := public.M("site_info").Where("site_id=?", params.SiteId).Count()
 	if err != nil {
-		return core.Fail("查询site_id失败")
+		return core.Fail(core.Lan("modules.nginx.query_site_id.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询site_id失败")
+		return core.Fail(core.Lan("modules.nginx.query_site_id.fail"))
 	}
 	if params.Types != "access" && params.Types != "error" {
-		return core.Fail("日志类型错误")
+		return core.Fail(core.Lan("modules.nginx.log_type.error"))
 	}
 	dir_path := "/www/cloud_waf/vhost/history_backups/logs/" + params.SiteId + "/" + params.Types + "_log"
 	result, _ := n.getFilesInDirectory(dir_path)
@@ -1445,13 +1445,13 @@ func (n *Nginx) DownloadLog(request *http.Request) core.Response {
 	}
 	count, err := public.M("site_info").Where("site_id=?", params.SiteId).Count()
 	if err != nil {
-		return core.Fail("查询site_id失败")
+		return core.Fail(core.Lan("modules.nginx.query_site_id.fail"))
 	}
 	if count == 0 {
-		return core.Fail("查询site_id失败")
+		return core.Fail(core.Lan("modules.nginx.query_site_id.fail"))
 	}
 	if params.Types != "access" && params.Types != "error" {
-		return core.Fail("日志类型错误")
+		return core.Fail(core.Lan("modules.nginx.log_type.error"))
 	}
 
 	dir_path := core.AbsPath("/www/cloud_waf/vhost/history_backups/logs/") + params.SiteId + "/" + params.Types + "_log/"
@@ -1467,9 +1467,9 @@ func (n *Nginx) DownloadLog(request *http.Request) core.Response {
 	if params.Delete == 1 {
 		err := os.Remove(file_name)
 		if err != nil {
-			return core.Success("删除成功")
+			return core.Success(core.Lan("modules.nginx.delete.success"))
 		}
 	}
 
-	return core.Success("操作成功")
+	return core.Success(core.Lan("modules.nginx.op.success"))
 }

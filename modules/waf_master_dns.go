@@ -28,8 +28,8 @@ import (
 const aesKey = "rOA3FLDroEC8quaA"
 
 var (
-	englishToChinese = map[string]string{"tencent": "腾讯云DNS", "aliyun": "阿里云DNS"}
-	aliyunVersion    = map[string]string{"mianfei": "免费版", "version_personal": "个人版", "version_enterprise_basic": "企业标准版", "version_enterprise_advanced": "企业旗舰版", "version_cached_basic": "权威代理标准版"}
+	englishToChinese = map[string]string{"tencent": core.Lan("modules.waf_master_dns.tencent"), "aliyun": core.Lan("modules.waf_master_dns.aliyun")}
+	aliyunVersion    = map[string]string{"mianfei": core.Lan("modules.waf_master_dns.aliyun.version.free"), "version_personal": core.Lan("modules.waf_master_dns.aliyun.version.personal"), "version_enterprise_basic": core.Lan("modules.waf_master_dns.aliyun.version.enterprise_basic"), "version_enterprise_advanced": core.Lan("modules.waf_master_dns.aliyun.version.enterprise_advanced"), "version_cached_basic": core.Lan("modules.waf_master_dns.aliyun.version.proxy_basic")}
 )
 
 func init() {
@@ -75,7 +75,7 @@ func GetApiKey(typeString string) (types.ApiKey, error) {
 	api := types.ApiKey{}
 	entryDnsData := types.EntryDnsData{}
 	if !public.M("dns_info").Where("dns_name = ?", []any{typeString}).Exists() {
-		return api, err.New("规则名称[" + englishToChinese[typeString] + "]不存在")
+		return api, err.New(fmt.Sprintf(core.Lan("modules.waf_master_dns.rule.not_found"), englishToChinese[typeString]))
 	}
 
 	query := public.M("dns_info").
@@ -227,7 +227,7 @@ func (m *Wafmaster) DeleteRecord(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if err != nil {
-		logging.Debug("删除域名解析记录失败: %s", err)
+		logging.Debug(core.Lan("modules.waf_master_dns.delete_record.fail"), err)
 	}
 	return core.Success(response)
 }
@@ -792,9 +792,9 @@ func (m *Wafmaster) CheckDnsDomain(request *http.Request) core.Response {
 	if errr != nil && errr.Error() != "3" {
 		switch errr.Error() {
 		case "0":
-			return core.Fail("防护域名端口不正确,端口范围为1-65535")
+			return core.Fail(core.Lan("modules.waf_master_dns.port.invalid"))
 		case "1", "2":
-			return core.Fail("防护域名地址不正确" + types.ErrIpWithNotHttp)
+			return core.Fail(core.Lan("modules.waf_master_dns.domain.invalid") + types.ErrIpWithNotHttp)
 		}
 		return core.Fail(errr)
 	}

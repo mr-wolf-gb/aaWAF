@@ -61,10 +61,10 @@ func (limit *Limit) SetIp(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["types"]; !ok {
-		return core.Fail("缺少types参数")
+		return core.Fail(core.Lan("modules.limit.types.missing"))
 	}
 	if _, ok := params["ip_type"]; !ok {
-		return core.Fail("缺少ip_type参数")
+		return core.Fail(core.Lan("modules.limit.ip_type.missing"))
 	}
 	uid := public.GetUid(request)
 	startIP := params["start"]
@@ -74,7 +74,7 @@ func (limit *Limit) SetIp(request *http.Request) core.Response {
 	var log_flag string
 
 	if _, ok := params["start"]; !ok {
-		return core.Fail("起始IP不能为空")
+		return core.Fail(core.Lan("modules.limit.start_ip.empty"))
 	}
 	notes := ""
 	if _, ok := params["notes"]; ok {
@@ -84,15 +84,15 @@ func (limit *Limit) SetIp(request *http.Request) core.Response {
 	ipType := "v4"
 	if public.InterfaceToInt(params["ip_type"]) == 0 {
 		if !public.IsIpv4(startIP.(string)) {
-			return core.Fail("IP格式不正确")
+			return core.Fail(core.Lan("modules.limit.ip_format.incorrect"))
 		}
 		startIP = public.IpToLong(startIP.(string))
 		if _, ok := params["end"]; ok && endIP.(string) != "" {
 			if !public.IsIpv4(endIP.(string)) {
-				return core.Fail("IP格式不合法")
+				return core.Fail(core.Lan("modules.limit.ip_format.invalid"))
 			}
 			if public.IpToLong(params["start"].(string)) > public.IpToLong(params["end"].(string)) {
-				return core.Fail("起始IP不能大于结束IP")
+				return core.Fail(core.Lan("modules.limit.start_cannot_gt_end"))
 			}
 			endIP = public.IpToLong(endIP.(string))
 		} else {
@@ -108,11 +108,11 @@ func (limit *Limit) SetIp(request *http.Request) core.Response {
 				return core.Fail(ok)
 			}
 			if l < 5 || l > 128 {
-				return core.Fail("IP格式不合法")
+				return core.Fail(core.Lan("modules.limit.ip_format.invalid"))
 			}
 		} else {
 			if !public.IsIpv6(parts[0]) {
-				return core.Fail("IP格式不正确")
+				return core.Fail(core.Lan("modules.limit.ip_format.incorrect"))
 			}
 		}
 		startIP = params["start"].(string)
@@ -131,35 +131,35 @@ func (limit *Limit) SetIp(request *http.Request) core.Response {
 	switch public.InterfaceToInt(params["types"]) {
 	case 0:
 		path = limit.ipWhite
-		name = "IP白名单"
+		name = core.Lan("modules.limit.ip.whitelist")
 		log_flag = "0"
 
 	case 1:
 		path = limit.ipBlack
-		name = "IP黑名单"
+		name = core.Lan("modules.limit.ip.blacklist")
 		log_flag = "1"
 	default:
-		return core.Fail("参数不合法!")
+		return core.Fail(core.Lan("modules.limit.param.invalid"))
 	}
 	fileData, err := limit.rIPFile(path)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.limit.file.read.fail"))
 	}
 
 	for _, values := range fileData {
 		if public.InterfaceToInt(params["ip_type"]) == 0 && public.InterfaceToString(values[6]) == "v4" {
 			if uint32(values[0].(float64)) == startIP && uint32(values[1].(float64)) == endIP {
-				return core.Fail("IP已添加")
+				return core.Fail(core.Lan("modules.limit.ip.added"))
 			}
 		}
 		if public.InterfaceToInt(params["ip_type"]) == 1 && public.InterfaceToString(values[6]) == "v6" {
 			if strings.Contains(values[0].(string), startIP.(string)) {
-				return core.Fail("IP已添加")
+				return core.Fail(core.Lan("modules.limit.ip.added"))
 			}
 		}
 		if public.InterfaceToInt(params["ip_type"]) == 2 && public.InterfaceToString(values[6]) == "ip_group" {
 			if strings.Contains(values[0].(string), startIP.(string)) {
-				return core.Fail("IP组已添加")
+				return core.Fail(core.Lan("modules.limit.ip_group.added"))
 			}
 		}
 
@@ -185,8 +185,8 @@ func (limit *Limit) SetIp(request *http.Request) core.Response {
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 	ipLog := limit.f(params["start"].(string), endLog.(string))
-	public.WriteOptLog(fmt.Sprintf("%s设置【%s】成功", name, ipLog), limit.log_type[log_flag], uid)
-	return core.Success(name + "设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.limit.set.success"), name, ipLog), limit.log_type[log_flag], uid)
+	return core.Success(name + core.Lan("modules.limit.set.success"))
 }
 
 func (limit *Limit) SetUa(request *http.Request) core.Response {
@@ -195,7 +195,7 @@ func (limit *Limit) SetUa(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["types"]; !ok {
-		return core.Fail("缺少types参数")
+		return core.Fail(core.Lan("modules.limit.types.missing"))
 	}
 	notes := ""
 	if _, ok := params["notes"]; ok {
@@ -203,7 +203,7 @@ func (limit *Limit) SetUa(request *http.Request) core.Response {
 	}
 	uid := public.GetUid(request)
 	if _, ok := params["data"]; !ok {
-		return core.Fail("缺少data参数")
+		return core.Fail(core.Lan("modules.limit.data.missing"))
 	}
 	path := ""
 	name := ""
@@ -212,22 +212,22 @@ func (limit *Limit) SetUa(request *http.Request) core.Response {
 	switch public.InterfaceToInt(params["types"]) {
 	case 0:
 		path = limit.uaWhite
-		name = "UA白名单"
+		name = core.Lan("modules.limit.ua.whitelist")
 		log_flag = "2"
 	case 1:
 		path = limit.uaBlack
-		name = "UA黑名单"
+		name = core.Lan("modules.limit.ua.blacklist")
 		log_flag = "3"
 	default:
-		return core.Fail("参数不合法!")
+		return core.Fail(core.Lan("modules.limit.param.invalid"))
 	}
 	fileData, err := limit.rUAFile(path)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.limit.file.read.fail"))
 	}
 	for _, values := range fileData {
 		if values.Ua == ua {
-			return core.Fail("UA已存在")
+			return core.Fail(core.Lan("modules.limit.ua.exists"))
 		}
 	}
 	uaIndex := public.RandomStr(20)
@@ -253,8 +253,8 @@ func (limit *Limit) SetUa(request *http.Request) core.Response {
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 
-	public.WriteOptLog(fmt.Sprintf("%s设置【匹配关键字-[%s]】成功", name, ua), limit.log_type[log_flag], uid)
-	return core.Success(name + "设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.limit.set_ua.success"), name, ua), limit.log_type[log_flag], uid)
+	return core.Success(name + core.Lan("modules.limit.set.success"))
 }
 
 func (limit *Limit) SetUrl(request *http.Request) core.Response {
@@ -263,17 +263,17 @@ func (limit *Limit) SetUrl(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if _, ok := params["types"]; !ok {
-		return core.Fail("缺少types参数")
+		return core.Fail(core.Lan("modules.limit.types.missing"))
 	}
 	uid := public.GetUid(request)
 	if _, ok := params["url"]; !ok {
-		return core.Fail("缺少url参数")
+		return core.Fail(core.Lan("modules.limit.url.missing"))
 	}
 	if params["url"].(string) == "/" {
-		return core.Fail("根目录不能添加")
+		return core.Fail(core.Lan("modules.limit.root_dir.no_add"))
 	}
 	if _, ok := params["type"]; !ok {
-		return core.Fail("缺少type参数")
+		return core.Fail(core.Lan("modules.limit.type.missing"))
 	}
 	notes := ""
 	if _, ok := params["notes"]; ok {
@@ -285,14 +285,14 @@ func (limit *Limit) SetUrl(request *http.Request) core.Response {
 	switch public.InterfaceToInt(params["types"]) {
 	case 0:
 		path = limit.urlWhite
-		name = "URI白名单"
+		name = core.Lan("modules.limit.uri.whitelist")
 		log_flag = "4"
 	case 1:
 		path = limit.urlBlack
-		name = "URI黑名单"
+		name = core.Lan("modules.limit.uri.blacklist")
 		log_flag = "5"
 	default:
-		return core.Fail("参数不合法!")
+		return core.Fail(core.Lan("modules.limit.param.invalid"))
 	}
 	url := public.InterfaceToString(params["url"])
 	match := public.InterfaceToString(params["type"])
@@ -300,14 +300,14 @@ func (limit *Limit) SetUrl(request *http.Request) core.Response {
 	urlIndex := public.RandomStr(20)
 	fileData, err := limit.rURLFile(path)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.limit.file.read.fail"))
 	}
 	for _, values := range fileData {
 		if values.URL == url && values.Type == match {
-			return core.Fail("URI已存在")
+			return core.Fail(core.Lan("modules.limit.uri.exists"))
 		}
 		if values.URL == url && values.Type == match && values.Param == param {
-			return core.Fail("URI已存在")
+			return core.Fail(core.Lan("modules.limit.uri.exists"))
 		}
 	}
 	check := []string{
@@ -349,7 +349,7 @@ func (limit *Limit) SetUrl(request *http.Request) core.Response {
 	err = encoder.Encode(fileData)
 	if err != nil {
 		public.WriteFile(path, "[]")
-		return core.Fail("JSON编码失败")
+		return core.Fail(core.Lan("modules.limit.json_encode.fail"))
 	}
 	_, err = public.WriteFile(path, buf.String())
 	if err != nil {
@@ -357,15 +357,15 @@ func (limit *Limit) SetUrl(request *http.Request) core.Response {
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 	matchType := map[string]string{
-		"=":       "完全相等",
-		"param":   "匹配参数",
-		"keyword": "关键字",
-		"prefix":  "匹配开头",
-		"suffix":  "匹配结尾",
-		"match":   "正则匹配",
+		"=":       core.Lan("modules.limit.eq"),
+		"param":   core.Lan("modules.limit.param"),
+		"keyword": core.Lan("modules.limit.keyword"),
+		"prefix":  core.Lan("modules.limit.prefix"),
+		"suffix":  core.Lan("modules.limit.suffix"),
+		"match":   core.Lan("modules.limit.match"),
 	}
-	public.WriteOptLog(fmt.Sprintf("%s设置【%s-[%s]】成功", name, matchType[match], url), limit.log_type[log_flag], uid)
-	return core.Success(name + "设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.limit.set_uri.success"), name, matchType[match], url), limit.log_type[log_flag], uid)
+	return core.Success(name + core.Lan("modules.limit.set.success"))
 }
 
 func (limit *Limit) SetInto(request *http.Request) core.Response {
@@ -415,12 +415,12 @@ func (limit *Limit) SetInto(request *http.Request) core.Response {
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
 	if _, ok := params["action"]; ok {
 		if public.InterfaceToInt(params["action"]) == 1 {
-			public.WriteOptLog(fmt.Sprintf("批量拉黑成功"), limit.log_type[log_flag], uid)
-			return core.Success("批量拉黑成功")
+			public.WriteOptLog(fmt.Sprintf(core.Lan("modules.limit.batch_blacklist.success")), limit.log_type[log_flag], uid)
+			return core.Success(core.Lan("modules.limit.batch_blacklist.success"))
 		}
 	}
-	public.WriteOptLog(fmt.Sprintf("导入%s成功", name), limit.log_type[log_flag], uid)
-	return core.Success("导入设置成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.limit.import.success"), name), limit.log_type[log_flag], uid)
+	return core.Success(core.Lan("modules.limit.import_set.success"))
 }
 
 func (limit *Limit) handleIPList(content interface{}, path string) core.Response {
@@ -685,35 +685,35 @@ func (limit *Limit) SetOut(request *http.Request) core.Response {
 	name := ""
 	var log_flag string
 	defer func() {
-		public.WriteOptLog(fmt.Sprintf("导出%s成功", name), limit.log_type[log_flag], uid)
+		public.WriteOptLog(fmt.Sprintf(core.Lan("modules.limit.export.success"), name), limit.log_type[log_flag], uid)
 	}()
 	switch public.InterfaceToInt(params["type"]) {
 	case 0:
-		name = "IP白名单"
+		name = core.Lan("modules.limit.ip.whitelist")
 		log_flag = "0"
 		return limit.ipList(limit.ipWhite, "ip_white")
 	case 1:
-		name = "IP黑名单"
+		name = core.Lan("modules.limit.ip.blacklist")
 		log_flag = "1"
 		return limit.ipList(limit.ipBlack, "ip_black")
 	case 2:
-		name = "UA白名单"
+		name = core.Lan("modules.limit.ua.whitelist")
 		log_flag = "2"
 		return limit.uaList(limit.uaWhite, "ua_white")
 	case 3:
-		name = "UA黑名单"
+		name = core.Lan("modules.limit.ua.blacklist")
 		log_flag = "3"
 		return limit.uaList(limit.uaBlack, "ua_black")
 	case 4:
-		name = "URI白名单"
+		name = core.Lan("modules.limit.uri.whitelist")
 		log_flag = "4"
 		return limit.urList(limit.urlWhite, "url_white")
 	case 5:
-		name = "URI黑名单"
+		name = core.Lan("modules.limit.uri.blacklist")
 		log_flag = "5"
 		return limit.urList(limit.urlBlack, "url_black")
 	default:
-		return core.Fail("参数不合法!")
+		return core.Fail(core.Lan("modules.limit.param.invalid"))
 	}
 }
 
@@ -746,10 +746,10 @@ func (limit *Limit) rFile(path string) (map[string][]types.Group, error) {
 func (limit *Limit) ipList(path, filename string) core.Response {
 	fileData, err := limit.rIPFile(path)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.limit.file.read.fail"))
 	}
 	if len(fileData) == 0 {
-		return core.Fail("暂无数据导出")
+		return core.Fail(core.Lan("modules.limit.no_data_to_export"))
 	}
 	var lines []string
 	s := ""
@@ -768,7 +768,7 @@ func (limit *Limit) ipList(path, filename string) core.Response {
 			ipData := "/www/cloud_waf/nginx/conf.d/waf/rule/ip_group.json"
 			fileData, err := limit.rFile(ipData)
 			if err != nil {
-				return core.Fail("读取文件失败!")
+				return core.Fail(core.Lan("modules.limit.file.read.fail"))
 			}
 			_, ok := fileData[ipGroupName]
 			if ok {
@@ -809,10 +809,10 @@ func (limit *Limit) ipList(path, filename string) core.Response {
 func (limit *Limit) uaList(path, filename string) core.Response {
 	fileData, err := limit.rUAFile(path)
 	if err != nil {
-		return core.Fail("读取文件失败!")
+		return core.Fail(core.Lan("modules.limit.file.read.fail"))
 	}
 	if len(fileData) == 0 {
-		return core.Fail("暂无数据导出")
+		return core.Fail(core.Lan("modules.limit.no_data_to_export"))
 	}
 	result := make([]string, len(fileData))
 	for i, item := range fileData {
@@ -832,7 +832,7 @@ func (limit *Limit) urList(path, filename string) core.Response {
 		return core.Fail(err)
 	}
 	if len(fileData) == 0 {
-		return core.Fail("暂无数据导出")
+		return core.Fail(core.Lan("modules.limit.no_data_to_export"))
 	}
 	result := make([]string, len(fileData))
 	for i, item := range fileData {
@@ -862,38 +862,38 @@ func (limit *Limit) ClearData(request *http.Request) core.Response {
 	switch public.InterfaceToInt(params["type"]) {
 	case 0:
 		path = limit.ipWhite
-		name = "IP白名单"
+		name = core.Lan("modules.limit.ip.whitelist")
 		log_flag = "0"
 	case 1:
 		path = limit.ipBlack
-		name = "IP黑名单"
+		name = core.Lan("modules.limit.ip.blacklist")
 		log_flag = "1"
 	case 2:
 		path = limit.uaWhite
-		name = "UA白名单"
+		name = core.Lan("modules.limit.ua.whitelist")
 		log_flag = "2"
 	case 3:
 		path = limit.uaBlack
-		name = "UA黑名单"
+		name = core.Lan("modules.limit.ua.blacklist")
 		log_flag = "3"
 	case 4:
 		path = limit.urlWhite
-		name = "URI白名单"
+		name = core.Lan("modules.limit.uri.whitelist")
 		log_flag = "4"
 	case 5:
 		path = limit.urlBlack
-		name = "URI黑名单"
+		name = core.Lan("modules.limit.uri.blacklist")
 		log_flag = "5"
 	default:
-		return core.Fail("参数不合法!")
+		return core.Fail(core.Lan("modules.limit.param.invalid"))
 	}
 	_, err = public.WriteFile(path, "[]")
 	if err != nil {
 		return core.Fail(err)
 	}
 	public.HttpPostByToken("http://127.0.0.251/updateinfo?types=rule", 2)
-	public.WriteOptLog(fmt.Sprintf("清空%s成功", name), limit.log_type[log_flag], uid)
-	return core.Success("清空成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("modules.limit.clear.success"), name), limit.log_type[log_flag], uid)
+	return core.Success(core.Lan("modules.limit.clear.success"))
 }
 
 func (limit *Limit) DelData(request *http.Request) core.Response {

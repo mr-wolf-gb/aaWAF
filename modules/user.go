@@ -204,19 +204,19 @@ func (user *User) Logout(request *http.Request) core.Response {
 	}
 	core.SetSession(request, "IsLogin", false)
 	public.WriteOptLog(core.Lan("user.logout.opt_log.success"), public.OPT_LOG_TYPE_LOGOUT, token.Uid())
-	return core.Success("已退出登录")
+	return core.Success(core.Lan("user.logout.success"))
 }
 
 func (user *User) GetValidateCode(request *http.Request) core.Response {
 	CodeResult := public.SetCodeResult(1, time.Microsecond*1)
 	id, imgBase64, err := public.CreatStringCode(nil, CodeResult)
 	if err != nil {
-		return core.Fail("生成图形验证码失败")
+		return core.Fail(core.Lan("user.generate_code.fail"))
 	}
 	err = cache.Set(fmt.Sprintf("USER_LOGIN_VALIDATE_CODE:%s", id), public.GetCode(CodeResult, id), 120)
 
 	if err != nil {
-		return core.Fail("生成图形验证码失败")
+		return core.Fail(core.Lan("user.generate_code.fail"))
 	}
 	clientIp := core.GetClientIpFromRequest(request)
 	cacheKey := fmt.Sprintf("USER_LOGIN_RETRIES:%s", clientIp)
@@ -255,7 +255,7 @@ func (user *User) UpdateProfile(request *http.Request) core.Response {
 			Find()
 
 		if err != nil || userInfo == nil {
-			return nil, errors.New("用户不存在")
+			return nil, errors.New(core.Lan("user.not_found"))
 		}
 		fields := map[string]interface{}{
 			"username": nil,
@@ -274,17 +274,17 @@ func (user *User) UpdateProfile(request *http.Request) core.Response {
 
 		if _, ok := params["password"]; ok {
 			if !public.IsComplexPassword(params["password"].(string)) {
-				return nil, errors.New("密码强度不符合要求")
+				return nil, errors.New(core.Lan("user.pwd_complexity.fail"))
 			}
 			params["md5_passwd"], err = public.StringMd5WithSalt(params["password"].(string), userInfo["salt"].(string))
 			if err != nil {
-				return nil, errors.New("密码修改失败")
+				return nil, errors.New(core.Lan("user.pwd_edit.fail"))
 			}
 			params["pwd_update_time"] = time.Now().Unix()
 			delete(params, "password")
 		}
 		if len(params) == 0 {
-			return core.Success("操作成功"), nil
+			return core.Success(core.Lan("user.op.success")), nil
 		}
 		_, err = conn.NewQuery().
 			Table("users").
@@ -292,9 +292,9 @@ func (user *User) UpdateProfile(request *http.Request) core.Response {
 			Update(params)
 
 		if err != nil {
-			return nil, errors.New("操作失败")
+			return nil, errors.New(core.Lan("modules.replacement.op.fail"))
 		}
-		return core.Success("操作成功"), nil
+		return core.Success(core.Lan("user.op.success")), nil
 	})
 
 	if err != nil {
@@ -302,14 +302,14 @@ func (user *User) UpdateProfile(request *http.Request) core.Response {
 	}
 	lst := make([]string, 0)
 	if _, ok := params["username"]; ok {
-		lst = append(lst, "用户名")
+		lst = append(lst, core.Lan("user.username"))
 	}
 
 	if _, ok := params["md5_passwd"]; ok {
-		lst = append(lst, "密码")
+		lst = append(lst, core.Lan("user.password"))
 	}
-	public.WriteOptLog(fmt.Sprintf("更新 %s", strings.Join(lst, ", ")), public.OPT_LOG_TYPE_UPDATE_PROFILE_SUCCESS, uid)
-	return core.Success("操作成功")
+	public.WriteOptLog(fmt.Sprintf(core.Lan("user.log.update"), strings.Join(lst, ", ")), public.OPT_LOG_TYPE_UPDATE_PROFILE_SUCCESS, uid)
+	return core.Success(core.Lan("user.op.success"))
 }
 
 func (user *User) Profile(request *http.Request) core.Response {
@@ -331,7 +331,7 @@ func (user *User) Profile(request *http.Request) core.Response {
 		FindAs(&userinfo)
 
 	if err != nil {
-		return core.Fail("用户不存在")
+		return core.Fail(core.Lan("user.not_found"))
 	}
 	btAccountInfo := types.BtAccountInfo{}
 	if public.FileExists(public.BT_USERINFO_FILE) {
@@ -348,7 +348,7 @@ func (user *User) Profile(request *http.Request) core.Response {
 	}
 
 	if _, ok := data["title"]; !ok {
-		data["title"] = "堡塔云WAF"
+		data["title"] = core.Lan("user.waf_title")
 	}
 	_, err = os.Stat(core.AbsPath("./config/logo.txt"))
 	if err != nil {
@@ -395,20 +395,20 @@ func (user *User) Update(request *http.Request) core.Response {
 		return core.Fail(err)
 	}
 	if !public.CompareVersion(curVer, latestVer.Version) {
-		return core.Success("已是最新版本")
+		return core.Success(core.Lan("modules.user.latest_version"))
 	}
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		switch clusterCommon.ClusterState() {
 		case clusterCommon.CLUSTER_DISABLED:
 			if _, err := public.ExecCommandCombined("bash", "-c", "nohup cat /www/cloud_waf/console/data/.pid|xargs kill -9; bash /www/cloud_waf/btw.init 17 >> "+core.AbsPath("./logs/error.log")+" 2>&1 &"); err != nil {
-				logging.Error("版本更新失败: ", err)
+				logging.Error(core.Lan("modules.user.update.fail"), err)
 			}
 		}
 	}()
 
 	_ = public.WriteOptLog("更新版本: "+curVer+" -> "+latestVer.Version, public.OPT_LOG_TYPE_USER_OPERATION, public.GetUid(request))
-	return core.Success("更新成功[" + latestVer.Version + "]")
+	return core.Success(fmt.Sprintf(core.Lan("modules.user.update.success"), latestVer.Version))
 }
 
 func (user *User) Repair(request *http.Request) core.Response {
@@ -417,26 +417,26 @@ func (user *User) Repair(request *http.Request) core.Response {
 		switch clusterCommon.ClusterState() {
 		case clusterCommon.CLUSTER_DISABLED:
 			if _, err := public.ExecCommandCombined("bash", "-c", "nohup cat /www/cloud_waf/console/data/.pid|xargs kill -9; bash /www/cloud_waf/btw.init 17 >> "+core.AbsPath("./logs/error.log")+" 2>&1 &"); err != nil {
-				logging.Error("修复失败: ", err)
+				logging.Error(core.Lan("modules.user.repair.fail"), err)
 			}
 		}
 	}()
 
-	return core.Success("修复成功")
+	return core.Success(core.Lan("modules.user.repair.success"))
 }
 
 func (user *User) Restart(request *http.Request) core.Response {
 	_, err := public.ExecCommandCombined("bash", "-c", "nohup /www/cloud_waf/console/CloudWaf >> /www/cloud_waf/console/logs/error.log 2>&1 &")
 
 	if err != nil {
-		return core.Fail("重启失败")
+		return core.Fail(core.Lan("modules.user.restart.fail"))
 	}
 
-	return core.Success("重启成功")
+	return core.Success(core.Lan("modules.user.restart.success"))
 }
 
 func (user *User) CheckStatus(request *http.Request) core.Response {
-	return core.Success("重启成功")
+	return core.Success(core.Lan("modules.user.restart.success"))
 }
 
 func (user *User) LatestVersion(request *http.Request) core.Response {
@@ -455,7 +455,7 @@ func (user *User) LatestVersion(request *http.Request) core.Response {
 
 func (user *User) UpdateMaliciousIp(request *http.Request) core.Response {
 	public.UpdateMaliciousIp()
-	return core.Success("更新成功")
+	return core.Success(core.Lan("modules.user.update_malicious_ip.success"))
 }
 
 func (user *User) GetMaliciousIpSharePlainText(request *http.Request) core.Response {
@@ -478,28 +478,28 @@ func (user *User) ConfirmMaliciousIpSharePlain(request *http.Request) core.Respo
 	}{}
 
 	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
-		return core.Fail(fmt.Errorf("获取参数失败：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.user.get_param.fail"), err))
 	}
 
 	switch params.Confirm {
 	case 0:
 		if _, err := os.Stat(public.MALICIOUS_IP_SHARE_PLAIN_FLAG_FILE); err != nil {
-			return core.Fail("您尚未加入《堡塔恶意IP共享计划》")
+			return core.Fail(core.Lan("modules.user.not_join_plan"))
 		}
 
 		if err := os.Remove(public.MALICIOUS_IP_SHARE_PLAIN_FLAG_FILE); err != nil {
-			return core.Fail("取消《堡塔恶意IP共享计划》失败，请稍后重试~")
+			return core.Fail(core.Lan("modules.user.cancel_plan.fail"))
 		}
 
-		return core.Success("取消成功，谢谢支持")
+		return core.Success(core.Lan("modules.user.cancel_plan.success"))
 	case 1:
 		if err := os.WriteFile(public.MALICIOUS_IP_SHARE_PLAIN_FLAG_FILE, []byte(""), 0644); err != nil {
-			return core.Fail("加入《堡塔恶意IP共享计划》失败，请稍后重试~")
+			return core.Fail(core.Lan("modules.user.join_plan.fail"))
 		}
 		public.UpdateMaliciousIp()
-		return core.Success("加入成功，谢谢支持")
+		return core.Success(core.Lan("modules.user.join_plan.success"))
 	}
-	return core.Fail("未知错误，请稍后重试~")
+	return core.Fail(core.Lan("modules.user.unknown.error"))
 }
 
 func (user *User) SubmitClaimText(request *http.Request) core.Response {
@@ -508,11 +508,11 @@ func (user *User) SubmitClaimText(request *http.Request) core.Response {
 	}{}
 
 	if err := core.GetParamsFromRequestToStruct(request, &params); err != nil {
-		return core.Fail(fmt.Errorf("参数错误：%w", err))
+		return core.Fail(fmt.Errorf(core.Lan("modules.user.param.error"), err))
 	}
 
 	if params.ClaimText == "" {
-		return core.Fail("需求反馈不能为空")
+		return core.Fail(core.Lan("modules.user.claim_text.empty"))
 	}
 
 	userinfo := public.NewBtAccountInfo()
@@ -524,10 +524,10 @@ func (user *User) SubmitClaimText(request *http.Request) core.Response {
 		"x_bt_token": "ODYyMDBhYmM2Njc4ZjgwOGNmMWQ0Mzgy",
 	})
 
-	return core.Success("提交成功")
+	return core.Success(core.Lan("modules.user.submit.success"))
 }
 
 func (user *User) SubmitNginxError(request *http.Request) core.Response {
 	public.SubmitNginxError()
-	return core.Success("提交成功")
+	return core.Success(core.Lan("modules.user.submit.success"))
 }

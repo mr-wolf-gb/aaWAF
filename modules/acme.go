@@ -43,7 +43,7 @@ func (as *Acmesh) ApplyCert(request *http.Request) core.Response {
 	}
 	err := InstallAcme(GetSslEmail(), "letsencrypt")
 	if err != nil {
-		return core.Fail("安装acme失败:" + err.Error())
+		return core.Fail(core.Lan("modules.acme.install.fail") + err.Error())
 	}
 	result, err := ApplyCert(params.Domain, params.Types, GetSslEmail(), params.SiteId)
 	if err != nil {
@@ -63,7 +63,7 @@ func GetSiteSslInfos(SiteId string) ([]types.SiteJson, int, error) {
 	}
 	count, err := query.Count()
 	if err != nil {
-		return siteList, tatal, fmt.Errorf("获取列表失败：%w", err)
+		return siteList, tatal, fmt.Errorf(core.Lan("modules.acme.list.fail"), err)
 	}
 	tatal = int(count)
 	params := types.SiteListParams{}
@@ -74,7 +74,7 @@ func GetSiteSslInfos(SiteId string) ([]types.SiteJson, int, error) {
 	res, err := public.SimplePage(query, params)
 
 	if err != nil {
-		return siteList, tatal, fmt.Errorf("获取列表失败：%w", err)
+		return siteList, tatal, fmt.Errorf(core.Lan("modules.acme.list.fail"), err)
 	}
 
 	mm := struct {
@@ -83,7 +83,7 @@ func GetSiteSslInfos(SiteId string) ([]types.SiteJson, int, error) {
 	}{}
 
 	if err = public.MapToStruct(res, &mm); err != nil {
-		return siteList, tatal, fmt.Errorf("获取列表失败：%w", err)
+		return siteList, tatal, fmt.Errorf(core.Lan("modules.acme.list.fail"), err)
 	}
 	for _, v := range mm.List {
 		siteJson, err := entryToSiteJson(*v)
@@ -142,7 +142,7 @@ func (as *Acmesh) RenewalCert(request *http.Request) core.Response {
 	}
 	err := InstallAcme(GetSslEmail(), "letsencrypt")
 	if err != nil {
-		return core.Fail("续签失败:" + err.Error())
+		return core.Fail(core.Lan("modules.acme.renewal.fail") + err.Error())
 	}
 	result, err := RenewalCert(params.SiteId)
 	if err != nil {
@@ -154,13 +154,13 @@ func (as *Acmesh) RenewalCert(request *http.Request) core.Response {
 func RenewalCert(siteId string) (string, error) {
 	SslInfo, totla, err := GetSiteSslInfos(siteId)
 	if err != nil {
-		return "", errors.New("没有找到网站信息")
+		return "", errors.New(core.Lan("modules.acme.no_site_info"))
 	}
 	if totla == 0 {
-		return "没有找到网站信息", errors.New("没有找到网站信息")
+		return core.Lan("modules.acme.no_site_info"), errors.New(core.Lan("modules.acme.no_site_info"))
 	}
 	if len(SslInfo) == 0 {
-		return "没有找到网站信息", errors.New("没有找到网站信息")
+		return core.Lan("modules.acme.no_site_info"), errors.New(core.Lan("modules.acme.no_site_info"))
 	}
 	var SiteJson types.SiteJson
 	for _, v := range SslInfo {
@@ -168,7 +168,7 @@ func RenewalCert(siteId string) (string, error) {
 		break
 	}
 	if SiteJson.Server.Ssl == nil || SiteJson.Server.Ssl.IsSsl == 0 {
-		return "", errors.New("该网站未开启SSL 无法续签")
+		return "", errors.New(core.Lan("modules.acme.site_no_ssl_for_renewal"))
 	}
 	if SiteJson.Server.Ssl.IsSsl == 1 {
 		if SiteJson.Server.Ssl.ForceHttps == 1 {
@@ -195,7 +195,7 @@ func RenewalCert(siteId string) (string, error) {
 			}
 			_, err := core.CallModuleActionSimulateAssertJson("Wafmastersite", "ModifySite", params)
 			if err != nil {
-				return "", errors.New("关闭强制HTTPS失败、无法续签")
+				return "", errors.New(core.Lan("modules.acme.close_https_fail_for_renewal"))
 			}
 		}
 		result, err := ApplyCert(SiteJson.Server.Ssl.Domains, SiteJson.Server.Ssl.ApplyType, GetSslEmail(), SiteJson.SiteID)
@@ -232,17 +232,17 @@ func ApplyCert(domain []string, typeString string, email string, siteId string) 
 		addDomain += " -d " + v
 	}
 	if addDomain == "" {
-		return "", errors.New("域名格式不正确，请检查域名格式")
+		return "", errors.New(core.Lan("modules.acme.domain_format.error"))
 	}
 	count, err := public.M("site_info").Where("site_id = ?", []any{siteId}).Count()
 	if err != nil {
 		return "", err
 	}
 	if count == 0 {
-		return "", errors.New("siteId不存在，请检查siteId是否正确")
+		return "", errors.New(core.Lan("modules.acme.site_id.not_found"))
 	}
 	if typeString != "dns" && typeString != "http" {
-		return "", errors.New("typeString只能为dns或者http")
+		return "", errors.New(core.Lan("modules.acme.type_string.error"))
 	}
 
 	cmd := AcmeshRoot + " --set-default-ca --server letsencrypt"
@@ -287,7 +287,7 @@ func ApplyCert(domain []string, typeString string, email string, siteId string) 
 				}
 			}
 			if isExist {
-				return "证书已经申请过", errors.New(`证书已经申请过,请在证书后期前一天续签即可！`)
+				return core.Lan("modules.acme.cert_already_applied"), errors.New(core.Lan("modules.acme.cert_already_applied_and_renew_next_day"))
 			}
 		}
 
@@ -313,7 +313,7 @@ func ApplyCert(domain []string, typeString string, email string, siteId string) 
 
 				returnError, boolV := ParseErrorInfo(readString)
 				if !boolV {
-					return "证书申请失败", errors.New(returnError)
+					return core.Lan("modules.acme.apply.fail"), errors.New(returnError)
 				} else {
 					return returnError, nil
 				}
@@ -348,7 +348,7 @@ func ApplyCert(domain []string, typeString string, email string, siteId string) 
 			}
 			returnError, boolV := ParseErrorInfo(readString)
 			if !boolV {
-				return "证书申请失败", errors.New(returnError)
+				return core.Lan("modules.acme.apply.fail"), errors.New(returnError)
 			} else {
 				return returnError, nil
 			}
@@ -375,13 +375,13 @@ func ApplyCert(domain []string, typeString string, email string, siteId string) 
 				sslJson.Fullchain, _ = public.ReadFile(siteSslPath + "/fullchain.pem")
 				err = DeploySsl(sslJson, true)
 				if err != nil {
-					return "证书部署到网站失败", err
+					return core.Lan("modules.acme.deploy.fail"), err
 				}
-				return "证书申请并部署到证书夹成功", nil
+				return core.Lan("modules.acme.apply_and_deploy_to_folder.success"), nil
 
 			}
 		}
-		return "证书申请失败：", err
+		return core.Lan("modules.acme.apply.fail"), err
 
 	}
 
@@ -428,7 +428,7 @@ func RenewCert(domain []string, email string, typeString string, siteId string) 
 						if strings.Contains(readString, checkError) {
 							checkError = "Error creating new order :: too many certificates"
 							if strings.Contains(readString, checkError) {
-								return stdOut, errors.New("指定时间内颁发了太多的证书！")
+								return stdOut, errors.New(core.Lan("modules.acme.too_many_certs_in_time"))
 							}
 						}
 					}
@@ -448,14 +448,14 @@ func RenewCert(domain []string, email string, typeString string, siteId string) 
 						}
 						returnError, boolV := ParseErrorInfo(readString)
 						if !boolV {
-							return "证书申请失败", errors.New(returnError)
+							return core.Lan("modules.acme.apply.fail"), errors.New(returnError)
 						} else {
 							return returnError, nil
 						}
 					}
 					returnError, boolV := ParseErrorInfo(readString)
 					if !boolV {
-						return "证书申请失败", errors.New(returnError)
+						return core.Lan("modules.acme.apply.fail"), errors.New(returnError)
 					} else {
 						return returnError, nil
 					}
@@ -504,11 +504,11 @@ func RenewCert(domain []string, email string, typeString string, siteId string) 
 		sslJson.Fullchain, _ = public.ReadFile(siteSslPath + "/fullchain.pem")
 		err = DeploySsl(sslJson, true)
 		if err != nil {
-			return "证书部署到网站失败", err
+			return core.Lan("modules.acme.deploy.fail"), err
 		}
-		return "证书申请并部署到网站成功", nil
+		return core.Lan("modules.acme.apply_and_deploy_to_site.success"), nil
 	}
-	return "证书申请并部署到证书夹成功", nil
+	return core.Lan("modules.acme.apply_and_deploy_to_folder.success"), nil
 }
 
 func (as *Acmesh) GetBtAccountInfo(request *http.Request) core.Response {
@@ -527,7 +527,7 @@ func (as *Acmesh) CheckBtAccountInfo(request *http.Request) core.Response {
 	if userinfo.Uid > 0 {
 		return core.Success("success")
 	}
-	return core.Fail("请先登录堡塔账号，再进行操作")
+	return core.Fail(core.Lan("modules.acme.login_bt_account.required"))
 }
 
 func GetBtAccountInfo() (types.BtAccountInfo, error) {
@@ -577,7 +577,7 @@ func InstallAcme(email string, server string) error {
 		os.MkdirAll("/www/cloud_waf/console/.acme.sh/", 0755)
 		os.MkdirAll("/root/.acme.sh/", 0755)
 		if !public.FileExists(acmeshZip) {
-			return errors.New("acme.sh压缩包不存在")
+			return errors.New(core.Lan("modules.acme.zip_not_found"))
 		}
 		err := compress.Unzip(acmeshZip, "./acme_sh")
 		if err != nil {
@@ -651,36 +651,36 @@ func GetSslEmail() string {
 }
 
 func ParseErrorInfo(readString string) (string, bool) {
-	returnError := "证书申请失败，错误信息如下：<br/>" + readString
+	returnError := core.Lan("modules.acme.apply.fail.with_error") + readString
 	if strings.Contains(readString, "Invalid status") && strings.Contains(readString, "429") {
 		if strings.Contains(readString, "Create new order error. Le_OrderFinalize not found.") {
 			if strings.Contains(readString, "Error creating new order :: too many certificates") {
-				returnError = "证书申请失败，指定时间内颁发了太多的证书！错误信息如下：<br/>" + readString
+				returnError = core.Lan("modules.acme.apply.fail.too_many_certs") + readString
 				return returnError, false
 			}
 		}
-		returnError = "证书申请失败，429错误<br/>" + readString
+		returnError = core.Lan("modules.acme.apply.fail.429") + readString
 		return returnError, false
 	}
 	if strings.Contains(readString, "Invalid status") && strings.Contains(readString, "403") {
-		returnError = "证书申请失败，403错误<br/>" + readString
+		returnError = core.Lan("modules.acme.apply.fail.403") + readString
 		return returnError, false
 	}
 	if strings.Contains(readString, "Invalid status") && strings.Contains(readString, "Verify error detail:DNS problem:") {
-		returnError = "证书申请失败，DNS错误<br/>" + readString
+		returnError = core.Lan("modules.acme.apply.fail.dns") + readString
 		return returnError, false
 
 	}
 	if strings.Contains(readString, "Error creating new order :: too many certificates") {
-		returnError = "证书申请失败，指定时间内颁发了太多的证书！报错如下：<br/>" + readString
+		returnError = core.Lan("modules.acme.apply.fail.too_many_certs.2") + readString
 		return returnError, false
 	}
 	if strings.Contains(readString, "Create new order error") {
-		returnError = "证书申请失败，生成新订单出错：<br/>" + readString
+		returnError = core.Lan("modules.acme.apply.fail.new_order") + readString
 		return returnError, false
 	}
 	if strings.Contains(readString, "Cert success") {
-		return "证书申请成功", true
+		return core.Lan("modules.acme.apply.success"), true
 	}
 	return returnError, false
 }

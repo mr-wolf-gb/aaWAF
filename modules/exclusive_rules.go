@@ -20,9 +20,9 @@ func init() {
 		exclusive_path_backup: "./tmp/excl_backup.json",
 		exclusive_path_show:   "./tmp/excl_show.json",
 		exclu_rules: map[string]string{
-			"huadong": "滑动验证",
-			"js":      "无感验证",
-			"renji":   "等待5s验证",
+			"huadong": core.Lan("modules.exclusive_rules.huadong"),
+			"js":      core.Lan("modules.exclusive_rules.js"),
+			"renji":   core.Lan("modules.exclusive_rules.renji"),
 		},
 	})
 }
@@ -63,14 +63,14 @@ func (e *Exclusive) AddRules(request *http.Request) core.Response {
 		excDataSlice := make([]types.Exclusive, 0)
 		excDataSlice = append(excDataSlice, excData)
 		if e.sliceToMapLua(excDataSlice) == false {
-			return core.Fail("写入专属规则配置失败1")
+			return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 		}
 		bs, _ := json.Marshal(excData)
 		_, err = public.WriteFile(e.exclusive_path_show, "["+string(bs)+"]")
 		if err != nil {
-			return core.Fail("写入专属规则失败")
+			return core.Fail(core.Lan("modules.exclusive_rules.write_rule.fail"))
 		}
-		return core.Success("添加成功")
+		return core.Success(core.Lan("modules.exclusive_rules.add.success"))
 	}
 	file_data := make([]types.Exclusive, 0)
 	err = json.Unmarshal([]byte(json_data), &file_data)
@@ -83,18 +83,18 @@ func (e *Exclusive) AddRules(request *http.Request) core.Response {
 	})
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		return core.Fail("写入专属规则失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_rule.fail"))
 	}
 	if e.sliceToMapLua(file_data) == false {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	} else {
-		logging.Info("map同步成功")
+		logging.Info(core.Lan("modules.exclusive_rules.map_sync.success"))
 	}
 	_, err = public.WriteFile(e.exclusive_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入专属规则失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_rule.fail"))
 	}
-	return core.Success("添加成功")
+	return core.Success(core.Lan("modules.exclusive_rules.add.success"))
 }
 
 func (e *Exclusive) DelRules(request *http.Request) core.Response {
@@ -126,14 +126,14 @@ func (e *Exclusive) DelRules(request *http.Request) core.Response {
 	}
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 	_, err = public.WriteFile(e.exclusive_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 
-	return core.Success("删除成功")
+	return core.Success(core.Lan("modules.exclusive_rules.delete.success"))
 
 }
 
@@ -199,9 +199,9 @@ func (e *Exclusive) RuleStatus(request *http.Request) core.Response {
 		if c, ok := v.(float64); ok {
 			if file_data[int(index)].Status != c {
 				if c == 0 {
-					log = "禁用规则"
+					log = core.Lan("modules.exclusive_rules.disable_rule")
 				} else {
-					log = "启用规则"
+					log = core.Lan("modules.exclusive_rules.enable_rule")
 				}
 			}
 			file_data[int(index)].Status = c
@@ -211,14 +211,14 @@ func (e *Exclusive) RuleStatus(request *http.Request) core.Response {
 
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		logging.Error("转json失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.json_transform.fail"), err)
 	}
 	_, err = public.WriteFile(e.exclusive_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 	fmt.Printf("log: %s", log)
-	return core.Success("修改成功")
+	return core.Success(core.Lan("modules.exclusive_rules.edit.success"))
 
 }
 
@@ -245,13 +245,13 @@ func (e *Exclusive) ClearCount(request *http.Request) core.Response {
 	file_data[int(index)].Count = 0
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		logging.Error("转json失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.json_transform.fail"), err)
 	}
 	_, err = public.WriteFile(e.exclusive_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
-	return core.Success("清空成功")
+	return core.Success(core.Lan("modules.exclusive_rules.clear.success"))
 
 }
 
@@ -294,14 +294,14 @@ func (e *Exclusive) UpdateRules(request *http.Request) core.Response {
 
 	rules_js, err := json.Marshal(file_data)
 	if err != nil {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 	_, err = public.WriteFile(e.exclusive_path_show, string(rules_js))
 	if err != nil {
-		return core.Fail("写入专属规则配置失败")
+		return core.Fail(core.Lan("modules.exclusive_rules.write_config.fail"))
 	}
 
-	return core.Success("修改成功")
+	return core.Success(core.Lan("modules.exclusive_rules.edit.success"))
 }
 
 func (e *Exclusive) searchItems(items []interface{}, keyword string) []interface{} {
@@ -335,12 +335,12 @@ func (e *Exclusive) backspaceExcl() bool {
 
 	rules_js, err := json.Marshal(json_data)
 	if err != nil {
-		logging.Error("转json失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.json_transform.fail"), err)
 	}
 
 	_, err = public.WriteFile(e.exclusive_path, string(rules_js))
 	if err != nil {
-		logging.Error("回退专属规则配置失败：", err)
+		logging.Error(core.Lan("modules.exclusive_rules.rollback.fail"), err)
 		return false
 	}
 	return true
@@ -360,9 +360,9 @@ func (e *Exclusive) backupExcl() bool {
 
 func (e *Exclusive) sliceToMapLua(data []types.Exclusive) bool {
 	if e.backupExcl() == false {
-		logging.Error("备份专属规则配置失败")
+		logging.Error(core.Lan("modules.exclusive_rules.backup.fail"))
 	} else {
-		logging.Info("备份专属规则配置成功")
+		logging.Info(core.Lan("modules.exclusive_rules.backup.success"))
 	}
 	result := make(map[string]types.Exclusive)
 	for _, item := range data {
@@ -378,9 +378,9 @@ func (e *Exclusive) sliceToMapLua(data []types.Exclusive) bool {
 	_, err = public.WriteFile(e.exclusive_path, string(rules_js))
 	if err != nil {
 		if e.backspaceExcl() == false {
-			logging.Error("回退专属规则配置失败")
+			logging.Error(core.Lan("modules.exclusive_rules.rollback.fail"))
 		} else {
-			logging.Info("回退专属规则配置成功")
+			logging.Info(core.Lan("modules.exclusive_rules.rollback.success"))
 		}
 		return false
 	}
